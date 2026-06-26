@@ -34,9 +34,6 @@ jobs:
     - name: Install Android build tools
       run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
 
-    - name: Add d8 to PATH
-      run: echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
-
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 

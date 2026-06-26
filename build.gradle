@@ -58,9 +58,12 @@ tasks.register('jarAndroid'){
 
         if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
 
+        def buildToolsDir = new File("$sdkRoot/build-tools/").listFiles().sort().reverse().find{ f -> f.isDirectory() && new File(f, isWindows ? "d8.bat" : "d8").exists()}
+        if(!buildToolsDir) throw new GradleException("No build-tools with d8 found. Ensure that you have Android build-tools installed.")
+
         def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
 
-        def d8 = isWindows ? "d8.bat" : "d8"
+        def d8 = new File(buildToolsDir, isWindows ? "d8.bat" : "d8").path
 
         "$d8 $dependencies --min-api 14 --output flameoutAndroid.jar flameout.jar"
                 .execute(null, new File("build/libs")).waitForProcessOutput(System.out, System.err)
