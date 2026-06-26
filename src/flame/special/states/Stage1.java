@@ -25,7 +25,7 @@ import static mindustry.Vars.*;
 public class Stage1 extends SpecialState{
     float time = 0;
     float time2 = 0f, time3 = 0f, time4 = 0f;
-    boolean found = false, collided = false;
+    boolean found = false, collided = false, ended = false;
     Ball ball;
     Seq<Ball2> ball2s = new Seq<>();
     int encounters = 0;
@@ -114,7 +114,8 @@ public class Stage1 extends SpecialState{
             }
         }
 
-        if(collided){
+        if(collided && !ended){
+            ended = true;
             collided = false;
             SpecialMain.increment(false);
             Log.info("[FlameOut][Stage1] 碰撞到敌人剧情1结束，请手动重启游戏进入下一阶段(10s后自动重启)");

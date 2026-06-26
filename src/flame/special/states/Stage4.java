@@ -109,6 +109,7 @@ public class Stage4 extends SpecialState{
     static class A{
         float x, y;
         float speed = UnitTypes.alpha.speed / 4f;
+        boolean arrived = false;
 
         void update(){
             speed += (1f / (60f * 60f)) * FlameOutSFX.timeDelta;
@@ -134,7 +135,8 @@ public class Stage4 extends SpecialState{
                 }
             });
 
-            if(Mathf.within(x, y, target.x, target.y, size)){
+            if(Mathf.within(x, y, target.x, target.y, size) && !arrived){
+                arrived = true;
                 SpecialMain.increment(false);
                 Log.info("[FlameOut][Stage4] 到达目标，请手动退出游戏进入下一阶段(10s后自动退出)");
                 Timer.schedule(() -> Core.app.exit(), 600f);
