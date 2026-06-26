@@ -21,6 +21,8 @@ public class FlameSettings{
     public static final String keyEmpathyRespawn = "flame-empathy-respawn";
     public static final String keySpriteScaleX = "flame-sprite-scalex";
     public static final String keySpriteScaleY = "flame-sprite-scaley";
+    public static final String keyDisableStory = "flame-disable-story";
+    public static final String keyDisableStoryKeys = "flame-disable-story-keys";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
@@ -30,6 +32,8 @@ public class FlameSettings{
     public static boolean empathyRespawn = true;
     public static float spriteScaleX = 1f;
     public static float spriteScaleY = 1f;
+    public static boolean disableStory = false;
+    public static boolean disableStoryKeys = false;
 
     static final String[] bloodColorNames = {
         "血色(原版)",
@@ -66,6 +70,8 @@ public class FlameSettings{
         empathyRespawn = Core.settings.getBool(keyEmpathyRespawn, true);
         spriteScaleX = Core.settings.getFloat(keySpriteScaleX, 1f);
         spriteScaleY = Core.settings.getFloat(keySpriteScaleY, 1f);
+        disableStory = Core.settings.getBool(keyDisableStory, false);
+        disableStoryKeys = Core.settings.getBool(keyDisableStoryKeys, false);
         applyBloodColor();
     }
 
@@ -78,6 +84,8 @@ public class FlameSettings{
         Core.settings.put(keyEmpathyRespawn, empathyRespawn);
         Core.settings.put(keySpriteScaleX, spriteScaleX);
         Core.settings.put(keySpriteScaleY, spriteScaleY);
+        Core.settings.put(keyDisableStory, disableStory);
+        Core.settings.put(keyDisableStoryKeys, disableStoryKeys);
     }
 
     public static void applyBloodColor(){
@@ -186,6 +194,16 @@ public class FlameSettings{
         t.add("剧情设置").fontScale(1.2f).left().padBottom(10f).row();
 
         t.left();
+
+        t.check("禁用剧情", disableStory, b -> {
+            disableStory = b;
+            save();
+        }).left().padBottom(10f).row();
+
+        t.check("禁用剧情快捷键", disableStoryKeys, b -> {
+            disableStoryKeys = b;
+            save();
+        }).left().padBottom(10f).row();
 
         t.check("自动重启游戏", autoRestart, b -> {
             autoRestart = b;

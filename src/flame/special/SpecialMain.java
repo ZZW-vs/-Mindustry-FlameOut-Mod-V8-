@@ -23,7 +23,7 @@ public class SpecialMain{
     private static float logTimer = 0f;   // 周期性状态报告的计时器
 
     public static void draw(){
-        if(activeState != null){
+        if(activeState != null && !FlameSettings.disableStory){
             activeState.draw();
         }
         SecretSpritesMenu.draw();
@@ -32,7 +32,7 @@ public class SpecialMain{
     public static void update(){
         updateTest();
 
-        if(activeState != null){
+        if(activeState != null && !FlameSettings.disableStory){
             activeState.update();
         }
 
@@ -59,16 +59,20 @@ public class SpecialMain{
     }
 
     public static void updateTest(){
+        if(Core.input.keyTap(KeyCode.f5)){
+            FlameSettings.showDialog();
+        }
+
+        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory){
+            return;
+        }
+
         if(FlameKeybinds.tap("key-reset")){
             Log.info("[FlameOut][Key-Reset] 重置阶段 -> 0");
             state = 0;
             Core.settings.put("flame-special", state);
             activeState = null;
             Log.info("[FlameOut][Key-Reset] 完成: activeState=null, saved to settings");
-        }
-
-        if(Core.input.keyTap(KeyCode.f5)){
-            FlameSettings.showDialog();
         }
 
         if(FlameKeybinds.tap("key-next")){
@@ -212,6 +216,13 @@ public class SpecialMain{
             }
         }
 
+        if(FlameSettings.disableStory){
+            Log.info("[FlameOut][load] 剧情已禁用，跳过剧情状态加载");
+            state = 0;
+            activeState = null;
+            return;
+        }
+
         loadState();
 
         if(activeState != null){
@@ -224,6 +235,11 @@ public class SpecialMain{
 
     public static void loadClient(){
         Log.info("[FlameOut][loadClient] 被调用，activeState=" + (activeState == null ? "null" : activeState.getClass().getSimpleName()));
+
+        if(FlameSettings.disableStory){
+            Log.info("[FlameOut][loadClient] 剧情已禁用，跳过 loadClient");
+            return;
+        }
 
         if(activeState == null) loadState();
 
