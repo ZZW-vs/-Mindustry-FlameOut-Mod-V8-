@@ -78,7 +78,7 @@ public class Stage2 extends SpecialState{
             if(crashTime >= 5f * 60){
                 //SpecialMain.increment(false);
                 Log.info("[FlameOut][Stage2] 剧情2结束，请手动重启游戏进入下一阶段(10s后自动重启)");
-                Timer.schedule(() -> Core.app.exit(), 1f);
+                Timer.schedule(() -> Core.app.exit(), 10f);
                 return;
             }
         }
