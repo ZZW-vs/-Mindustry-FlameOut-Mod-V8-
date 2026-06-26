@@ -26,6 +26,7 @@ public class SpecialMain{
         if(activeState != null){
             activeState.draw();
         }
+        SecretSpritesMenu.draw();
     }
 
     public static void update(){
@@ -34,6 +35,8 @@ public class SpecialMain{
         if(activeState != null){
             activeState.update();
         }
+
+        SecretSpritesMenu.update();
 
         // 每 2 秒输出一次当前状态，方便调试
         logTimer += Time.delta;
