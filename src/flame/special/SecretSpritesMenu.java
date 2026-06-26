@@ -1,10 +1,8 @@
 package flame.special;
 
 import arc.*;
-import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.input.*;
-import arc.math.*;
 import arc.scene.style.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
@@ -97,7 +95,7 @@ public class SecretSpritesMenu{
     }
 
     public static void update(){
-        if(Core.input.keyTap(KeyCode.j) && Vars.state.isGame()){
+        if(Core.input.keyTap(KeyCode.h) && Vars.state.isGame()){
             if(dialog == null) load();
             dialog.show();
         }
