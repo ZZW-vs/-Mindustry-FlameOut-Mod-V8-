@@ -67,6 +67,10 @@ public class SpecialMain{
             Log.info("[FlameOut][Key-Reset] 完成: activeState=null, saved to settings");
         }
 
+        if(Core.input.keyTap(KeyCode.f5)){
+            FlameSettings.showDialog();
+        }
+
         if(FlameKeybinds.tap("key-next")){
             if(state < 5){
                 increment(false);
@@ -163,7 +167,8 @@ public class SpecialMain{
         Log.info("[FlameOut]    [" + FlameKeybinds.get("key-quit") + "] 退出剧情并重启游戏");
         Log.info("[FlameOut]    [" + FlameKeybinds.get("key-fastforward") + "] 按住快进，跳过等待阶段");
         Log.info("[FlameOut]    [" + FlameKeybinds.get("key-sprites") + "] 隐藏贴图菜单");
-        Log.info("[FlameOut]  (可在游戏设置 -> FlameOut 中修改快捷键)");
+        Log.info("[FlameOut]    [F5] 打开 FlameOut 设置");
+        Log.info("[FlameOut]  (可在游戏设置 -> FlameOut 或按 F5 修改快捷键)");
         Log.info("[FlameOut] ==================================================");
 
         state = Core.settings.getInt("flame-special", 0);

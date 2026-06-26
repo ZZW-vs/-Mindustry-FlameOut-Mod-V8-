@@ -49,6 +49,9 @@ public class Stage2 extends SpecialState{
     float crashTime = 0f;
 
     boolean killed, incremented = false;
+    boolean restartStarted = false;
+    float restartCountdown = 0f;
+    int lastLoggedSecond = -1;
     SoundInstance sound;
 
     static Seq<Unit> units = new Seq<>();
@@ -77,8 +80,25 @@ public class Stage2 extends SpecialState{
             crashTime += FlameOutSFX.timeDelta;
             if(crashTime >= 5f * 60){
                 //SpecialMain.increment(false);
-                Log.info("[FlameOut][Stage2] 剧情2结束，请手动重启游戏进入下一阶段(10s后自动重启)");
-                Timer.schedule(() -> Core.app.exit(), 10f);
+                if(!restartStarted){
+                    restartStarted = true;
+                    if(FlameSettings.autoRestart){
+                        float delay = FlameSettings.restartTime;
+                        Log.info("[FlameOut][Stage2] 剧情2结束，" + (int)delay + "s后自动重启");
+                        Timer.schedule(() -> Core.app.exit(), delay);
+                        restartCountdown = delay;
+                    }else{
+                        Log.info("[FlameOut][Stage2] 剧情2结束，请手动重启游戏进入下一阶段");
+                    }
+                }
+                if(FlameSettings.autoRestart && restartCountdown > 0f){
+                    restartCountdown -= Time.delta / 60f;
+                    int remaining = (int)Math.ceil(restartCountdown);
+                    if(remaining != lastLoggedSecond && remaining >= 0){
+                        lastLoggedSecond = remaining;
+                        Log.info("[FlameOut][Stage2] 自动重启倒计时: " + remaining + "s");
+                    }
+                }
                 return;
             }
         }

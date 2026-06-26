@@ -26,6 +26,8 @@ public class Stage1 extends SpecialState{
     float time = 0;
     float time2 = 0f, time3 = 0f, time4 = 0f;
     boolean found = false, collided = false, ended = false;
+    float restartCountdown = 0f;
+    int lastLoggedSecond = -1;
     Ball ball;
     Seq<Ball2> ball2s = new Seq<>();
     int encounters = 0;
@@ -118,8 +120,22 @@ public class Stage1 extends SpecialState{
             ended = true;
             collided = false;
             SpecialMain.increment(false);
-            Log.info("[FlameOut][Stage1] 碰撞到敌人剧情1结束，请手动重启游戏进入下一阶段(10s后自动重启)");
-            Timer.schedule(() -> Core.app.exit(), 10f);
+            if(FlameSettings.autoRestart){
+                float delay = FlameSettings.restartTime;
+                Log.info("[FlameOut][Stage1] 碰撞到敌人剧情1结束，" + (int)delay + "s后自动重启");
+                Timer.schedule(() -> Core.app.exit(), delay);
+                restartCountdown = delay;
+            }else{
+                Log.info("[FlameOut][Stage1] 碰撞到敌人剧情1结束，请手动重启游戏进入下一阶段");
+            }
+        }
+        if(ended && FlameSettings.autoRestart && restartCountdown > 0f){
+            restartCountdown -= Time.delta / 60f;
+            int remaining = (int)Math.ceil(restartCountdown);
+            if(remaining != lastLoggedSecond && remaining >= 0){
+                lastLoggedSecond = remaining;
+                Log.info("[FlameOut][Stage1] 自动重启倒计时: " + remaining + "s");
+            }
         }
     }
 

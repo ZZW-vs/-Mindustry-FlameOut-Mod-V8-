@@ -32,6 +32,7 @@ public class FlameOut extends Mod{
             FlameSounds.load();
             if(!Vars.headless){
                 FlameKeybinds.load();
+                FlameSettings.load();
                 FlameShaders.load();
                 ImpactBatch.init();
                 FixedSpriteBatch.init();
