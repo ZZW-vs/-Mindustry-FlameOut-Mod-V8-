@@ -737,10 +737,10 @@ public class Stage2 extends SpecialState{
 
             ui.paused = this;
 
-            shown(this::rebuild);
+            shown(this::buildMenu);
         }
 
-        void rebuild(){
+        void buildMenu(){
             cont.clear();
 
             cont.defaults().size(130f).pad(5);

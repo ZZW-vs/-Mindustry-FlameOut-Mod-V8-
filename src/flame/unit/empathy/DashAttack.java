@@ -105,6 +105,7 @@ public class DashAttack extends AttackAI{
                                     case turret -> scr = scr * 3 + (b instanceof TurretBuild tb ? (tb.hasAmmo() ? FlameOutSFX.inst.getBulletDps(tb.peekAmmo()) : 0f) : 1000f);
                                     case core -> scr = 1;
                                     case reactor, generator, factory -> scr *= 2;
+                                    default -> {}
                                 }
                             }
                         }

@@ -20,7 +20,6 @@ public class SpecialMain{
 
     private static int state = 0;
     private static float logTimer = 0f;   // 周期性状态报告的计时器
-    private static boolean initialized = false;
 
     public static void draw(){
         if(activeState != null){
@@ -208,8 +207,6 @@ public class SpecialMain{
         } else {
             Log.info("[FlameOut][load] 未自动加载任何阶段（state=" + state + "，按 V 手动启动）");
         }
-
-        initialized = true;
     }
 
     public static void loadClient(){
