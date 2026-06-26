@@ -100,7 +100,7 @@ public class Stage3 extends SpecialState{
             fbc.update();
 
             if(slotEmptied){
-                //Core.app.exit();
+                Core.app.exit();
                 if(dataDialog == null){
                     createFakeDataDialog();
                 }
