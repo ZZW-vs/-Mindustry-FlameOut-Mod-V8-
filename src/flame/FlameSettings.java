@@ -10,17 +10,22 @@ import mindustry.*;
 import mindustry.game.EventType.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
+import mindustry.core.GameState.*;
 
 public class FlameSettings{
     public static final String keyAutoRestart = "flame-autorestart";
     public static final String keyRestartTime = "flame-restarttime";
     public static final String keyUseOriginalSprites = "flame-originalsprites";
     public static final String keyBloodColor = "flame-bloodcolor";
+    public static final String keyApathySpawnEmpathy = "flame-apathy-spawn-empathy";
+    public static final String keyEmpathyRespawn = "flame-empathy-respawn";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
     public static boolean useOriginalSprites = false;
     public static int bloodColorIndex = 1;
+    public static boolean apathySpawnEmpathy = true;
+    public static boolean empathyRespawn = true;
 
     static final String[] bloodColorNames = {
         "血色(原版)",
@@ -53,6 +58,8 @@ public class FlameSettings{
         restartTime = Core.settings.getFloat(keyRestartTime, 25f);
         useOriginalSprites = Core.settings.getBool(keyUseOriginalSprites, false);
         bloodColorIndex = Core.settings.getInt(keyBloodColor, 1);
+        apathySpawnEmpathy = Core.settings.getBool(keyApathySpawnEmpathy, true);
+        empathyRespawn = Core.settings.getBool(keyEmpathyRespawn, true);
         applyBloodColor();
     }
 
@@ -61,6 +68,8 @@ public class FlameSettings{
         Core.settings.put(keyRestartTime, restartTime);
         Core.settings.put(keyUseOriginalSprites, useOriginalSprites);
         Core.settings.put(keyBloodColor, bloodColorIndex);
+        Core.settings.put(keyApathySpawnEmpathy, apathySpawnEmpathy);
+        Core.settings.put(keyEmpathyRespawn, empathyRespawn);
     }
 
     public static void applyBloodColor(){
@@ -69,10 +78,25 @@ public class FlameSettings{
         }
     }
 
+    static boolean wasPaused = false;
+
     public static void showDialog(){
         if(dialog == null){
             dialog = new BaseDialog("FlameOut 设置");
             rebuild();
+            dialog.shown(() -> {
+                if(Vars.state.isGame()){
+                    wasPaused = Vars.state.isPaused();
+                    if(!wasPaused){
+                        Vars.state.set(State.paused);
+                    }
+                }
+            });
+            dialog.hidden(() -> {
+                if(Vars.state.isGame() && !wasPaused){
+                    Vars.state.set(State.playing);
+                }
+            });
         }
         dialog.show();
     }
@@ -85,16 +109,20 @@ public class FlameSettings{
         main.margin(10f);
 
         Table tabBar = new Table();
-        tabBar.button("剧情设置", Styles.flatt, () -> {
+        tabBar.button("单位设置", Styles.flatt, () -> {
             currentTab = 0;
             rebuildContent();
         }).size(140f, 40f).pad(4f);
-        tabBar.button("视觉设置", Styles.flatt, () -> {
+        tabBar.button("剧情设置", Styles.flatt, () -> {
             currentTab = 1;
             rebuildContent();
         }).size(140f, 40f).pad(4f);
-        tabBar.button("键位设置", Styles.flatt, () -> {
+        tabBar.button("视觉设置", Styles.flatt, () -> {
             currentTab = 2;
+            rebuildContent();
+        }).size(140f, 40f).pad(4f);
+        tabBar.button("键位设置", Styles.flatt, () -> {
+            currentTab = 3;
             rebuildContent();
         }).size(140f, 40f).pad(4f);
 
@@ -112,12 +140,33 @@ public class FlameSettings{
     static void rebuildContent(){
         contentTable.clearChildren();
         if(currentTab == 0){
-            buildStoryTab(contentTable);
+            buildUnitTab(contentTable);
         }else if(currentTab == 1){
+            buildStoryTab(contentTable);
+        }else if(currentTab == 2){
             buildVisualTab(contentTable);
         }else{
             FlameKeybinds.rebuildTable(contentTable);
         }
+    }
+
+    static void buildUnitTab(Table t){
+        t.add("单位设置").fontScale(1.2f).left().padBottom(10f).row();
+
+        t.left();
+
+        t.check("冷漠死后生成共鸣", apathySpawnEmpathy, b -> {
+            apathySpawnEmpathy = b;
+            save();
+        }).left().padBottom(10f).row();
+
+        t.check("共鸣跨地图重生", empathyRespawn, b -> {
+            empathyRespawn = b;
+            save();
+        }).left().padBottom(10f).row();
+
+        t.row();
+        t.add("提示：修改后立即生效").left().padTop(20f).color(Color.lightGray).row();
     }
 
     static void buildStoryTab(Table t){

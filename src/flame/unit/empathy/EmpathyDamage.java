@@ -72,7 +72,7 @@ public class EmpathyDamage{
         excludeTime.clear();
     }
     public static void worldLoad(){
-        if(spawner != null && spawner.shouldSpawn){
+        if(spawner != null && spawner.shouldSpawn && FlameSettings.empathyRespawn){
             spawner.reactivateTime = 5f * 60f;
             spawner.timeScl++;
             spawner.shouldSpawn = false;
