@@ -1,0 +1,22 @@
+# Gradle
+build/
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+gradlew
+gradlew.bat
+
+#IDE
+.trae
+.vscode
+
+#其他
+hidden_image.png
+参考/
+check_dimensions.ps1
+manage_hidden.ps1
+
+bin/
+.DS_Store
+Thumbs.db
+*.log
+
