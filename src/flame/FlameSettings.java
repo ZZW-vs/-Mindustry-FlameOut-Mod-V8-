@@ -13,9 +13,11 @@ import mindustry.ui.dialogs.*;
 public class FlameSettings{
     public static final String keyAutoRestart = "flame-autorestart";
     public static final String keyRestartTime = "flame-restarttime";
+    public static final String keyUseOriginalSprites = "flame-originalsprites";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
+    public static boolean useOriginalSprites = false;
 
     static BaseDialog dialog;
     static int currentTab = 0;
@@ -24,11 +26,13 @@ public class FlameSettings{
     public static void load(){
         autoRestart = Core.settings.getBool(keyAutoRestart, true);
         restartTime = Core.settings.getFloat(keyRestartTime, 25f);
+        useOriginalSprites = Core.settings.getBool(keyUseOriginalSprites, false);
     }
 
     public static void save(){
         Core.settings.put(keyAutoRestart, autoRestart);
         Core.settings.put(keyRestartTime, restartTime);
+        Core.settings.put(keyUseOriginalSprites, useOriginalSprites);
     }
 
     public static void showDialog(){
@@ -98,6 +102,15 @@ public class FlameSettings{
         }).width(120f).left().row();
 
         t.row();
-        t.add("提示：修改后立即生效").left().padTop(20f).color(Color.lightGray).row();
+        t.add("贴图设置").fontScale(1.1f).left().padTop(15f).padBottom(8f).row();
+
+        t.check("使用原版剧情贴图", useOriginalSprites, b -> {
+            useOriginalSprites = b;
+            save();
+        }).left().padBottom(4f).row();
+        t.add("重启游戏后生效").left().padBottom(10f).color(Color.lightGray).row();
+
+        t.row();
+        t.add("提示：修改后立即生效（贴图需重启）").left().padTop(20f).color(Color.lightGray).row();
     }
 }

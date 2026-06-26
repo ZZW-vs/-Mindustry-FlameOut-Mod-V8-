@@ -180,7 +180,8 @@ public class SpecialMain{
         }
 
         try{
-            Fi file = Vars.tree.get("extras/Vultures.png");
+            String spriteFile = FlameSettings.useOriginalSprites ? "extras/Vulture_original.png" : "extras/Vultures.png";
+            Fi file = Vars.tree.get(spriteFile);
             byte[] bytes = file.readBytes();
             Pixmap map = new Pixmap(bytes, offset, bytes.length);
             main = new Texture(map);
@@ -198,10 +199,11 @@ public class SpecialMain{
             loadRegion("flower", 1026, 896, 1533, 1023);
             loadRegion("tree", 1536, 896, 2047, 1023);
 
-            Log.info("[FlameOut][load] 特殊纹理资源加载成功，regionSeq.size=" + regionSeq.size);
+            Log.info("[FlameOut][load] 特殊纹理资源加载成功，regionSeq.size=" + regionSeq.size + "，使用" + (FlameSettings.useOriginalSprites ? "原版" : "修改版") + "贴图");
         }catch(Exception e){
             main = null;
-            Log.info("[FlameOut][load] 未找到特殊纹理 extras/Vultures.png，使用 fallback 占位纹理");
+            Log.info("[FlameOut][load] 未找到特殊纹理，使用 fallback 占位纹理");
+            Log.info("[FlameOut][load] 错误: " + e.getMessage());
 
             TextureRegion placeholder = Core.atlas.find("clear-effect");
             for(int i = 0; i < 12; i++){
