@@ -119,7 +119,7 @@ public class Stage1 extends SpecialState{
             collided = false;
             SpecialMain.increment(false);
             Log.info("[FlameOut][Stage1] 碰撞到敌人剧情1结束，请手动重启游戏进入下一阶段(10s后自动重启)");
-            Timer.schedule(() -> Core.app.exit(), 600f);
+            Timer.schedule(() -> Core.app.exit(), 1f);
         }
     }
 
