@@ -20,6 +20,8 @@ public class SecretSpritesMenu{
     static BaseDialog dialog;
     static float selectedSize = 8f;
     static float selectedRot = 0f;
+    static float selectedScaleX = 1f;
+    static float selectedScaleY = 1f;
 
     static String[] spriteNames = {
         "main", "ball", "hug", "cat",
@@ -28,6 +30,10 @@ public class SecretSpritesMenu{
     };
 
     public static void load(){
+        selectedSize = 8f;
+        selectedRot = 0f;
+        selectedScaleX = FlameSettings.spriteScaleX;
+        selectedScaleY = FlameSettings.spriteScaleY;
         dialog = new BaseDialog("隐藏贴图");
         rebuild();
     }
@@ -69,7 +75,7 @@ public class SecretSpritesMenu{
                 if(selectedSize < 1f) selectedSize = 1f;
                 if(selectedSize > 100f) selectedSize = 100f;
             }catch(Exception ignored){}
-        }).width(100f).left();
+        }).width(80f).left();
         settings.row();
 
         settings.add("旋转: ").left();
@@ -77,7 +83,31 @@ public class SecretSpritesMenu{
             try{
                 selectedRot = Float.parseFloat(s);
             }catch(Exception ignored){}
-        }).width(100f).left();
+        }).width(80f).left();
+        settings.row();
+
+        settings.add("横向拉伸: ").left();
+        settings.field(selectedScaleX + "", s -> {
+            try{
+                selectedScaleX = Float.parseFloat(s);
+                if(selectedScaleX < 0.1f) selectedScaleX = 0.1f;
+                if(selectedScaleX > 10f) selectedScaleX = 10f;
+                FlameSettings.spriteScaleX = selectedScaleX;
+                FlameSettings.save();
+            }catch(Exception ignored){}
+        }).width(80f).left();
+        settings.row();
+
+        settings.add("纵向拉伸: ").left();
+        settings.field(selectedScaleY + "", s -> {
+            try{
+                selectedScaleY = Float.parseFloat(s);
+                if(selectedScaleY < 0.1f) selectedScaleY = 0.1f;
+                if(selectedScaleY > 10f) selectedScaleY = 10f;
+                FlameSettings.spriteScaleY = selectedScaleY;
+                FlameSettings.save();
+            }catch(Exception ignored){}
+        }).width(80f).left();
         settings.row();
 
         settings.button("清除所有", () -> placed.clear()).colspan(2).fillX().padTop(8f);
@@ -92,12 +122,13 @@ public class SecretSpritesMenu{
         if(reg == null || Vars.player.unit() == null) return;
 
         Unit u = Vars.player.unit();
-        placed.add(new PlacedSprite(reg, name, u.x, u.y, selectedSize, selectedRot));
+        placed.add(new PlacedSprite(reg, name, u.x, u.y, selectedSize, selectedRot, selectedScaleX, selectedScaleY));
     }
 
     public static void update(){
         if(FlameKeybinds.tap("key-sprites") && Vars.state.isGame()){
             if(dialog == null) load();
+            rebuild();
             dialog.show();
         }
     }
@@ -108,8 +139,9 @@ public class SecretSpritesMenu{
         for(PlacedSprite p : placed){
             Draw.z(Layer.blockUnder - 0.5f);
             Draw.color();
-            float size = p.size * Vars.tilesize;
-            Draw.rect(p.region, p.x, p.y, size, size, p.rot);
+            float width = p.size * Vars.tilesize * p.scaleX;
+            float height = p.size * Vars.tilesize * p.scaleY;
+            Draw.rect(p.region, p.x, p.y, width, height, p.rot);
         }
     }
 
@@ -119,14 +151,18 @@ public class SecretSpritesMenu{
         public float x, y;
         public float size;
         public float rot;
+        public float scaleX;
+        public float scaleY;
 
-        public PlacedSprite(TextureRegion region, String name, float x, float y, float size, float rot){
+        public PlacedSprite(TextureRegion region, String name, float x, float y, float size, float rot, float scaleX, float scaleY){
             this.region = region;
             this.name = name;
             this.x = x;
             this.y = y;
             this.size = size;
             this.rot = rot;
+            this.scaleX = scaleX;
+            this.scaleY = scaleY;
         }
     }
 }

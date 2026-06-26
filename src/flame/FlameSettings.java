@@ -19,6 +19,8 @@ public class FlameSettings{
     public static final String keyBloodColor = "flame-bloodcolor";
     public static final String keyApathySpawnEmpathy = "flame-apathy-spawn-empathy";
     public static final String keyEmpathyRespawn = "flame-empathy-respawn";
+    public static final String keySpriteScaleX = "flame-sprite-scalex";
+    public static final String keySpriteScaleY = "flame-sprite-scaley";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
@@ -26,6 +28,8 @@ public class FlameSettings{
     public static int bloodColorIndex = 1;
     public static boolean apathySpawnEmpathy = true;
     public static boolean empathyRespawn = true;
+    public static float spriteScaleX = 1f;
+    public static float spriteScaleY = 1f;
 
     static final String[] bloodColorNames = {
         "血色(原版)",
@@ -60,6 +64,8 @@ public class FlameSettings{
         bloodColorIndex = Core.settings.getInt(keyBloodColor, 1);
         apathySpawnEmpathy = Core.settings.getBool(keyApathySpawnEmpathy, true);
         empathyRespawn = Core.settings.getBool(keyEmpathyRespawn, true);
+        spriteScaleX = Core.settings.getFloat(keySpriteScaleX, 1f);
+        spriteScaleY = Core.settings.getFloat(keySpriteScaleY, 1f);
         applyBloodColor();
     }
 
@@ -70,6 +76,8 @@ public class FlameSettings{
         Core.settings.put(keyBloodColor, bloodColorIndex);
         Core.settings.put(keyApathySpawnEmpathy, apathySpawnEmpathy);
         Core.settings.put(keyEmpathyRespawn, empathyRespawn);
+        Core.settings.put(keySpriteScaleX, spriteScaleX);
+        Core.settings.put(keySpriteScaleY, spriteScaleY);
     }
 
     public static void applyBloodColor(){
