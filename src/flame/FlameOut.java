@@ -31,6 +31,7 @@ public class FlameOut extends Mod{
         Events.on(FileTreeInitEvent.class, e -> Core.app.post(() -> {
             FlameSounds.load();
             if(!Vars.headless){
+                FlameKeybinds.load();
                 FlameShaders.load();
                 ImpactBatch.init();
                 FixedSpriteBatch.init();

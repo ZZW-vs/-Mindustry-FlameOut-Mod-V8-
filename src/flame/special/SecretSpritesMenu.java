@@ -8,6 +8,7 @@ import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.struct.*;
 import arc.util.*;
+import flame.*;
 import mindustry.*;
 import mindustry.gen.*;
 import mindustry.graphics.*;
@@ -95,7 +96,7 @@ public class SecretSpritesMenu{
     }
 
     public static void update(){
-        if(Core.input.keyTap(KeyCode.h) && Vars.state.isGame()){
+        if(FlameKeybinds.tap("key-sprites") && Vars.state.isGame()){
             if(dialog == null) load();
             dialog.show();
         }

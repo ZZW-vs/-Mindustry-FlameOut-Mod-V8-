@@ -8,6 +8,7 @@ import arc.graphics.g2d.*;
 import arc.input.*;
 import arc.struct.*;
 import arc.util.*;
+import flame.*;
 import flame.special.states.*;
 import mindustry.*;
 
@@ -58,60 +59,60 @@ public class SpecialMain{
     }
 
     public static void updateTest(){
-        if(Core.input.keyTap(KeyCode.z)){
-            Log.info("[FlameOut][Key-Z] 重置阶段 -> 0");
+        if(FlameKeybinds.tap("key-reset")){
+            Log.info("[FlameOut][Key-Reset] 重置阶段 -> 0");
             state = 0;
             Core.settings.put("flame-special", state);
             activeState = null;
-            Log.info("[FlameOut][Key-Z] 完成: activeState=null, saved to settings");
+            Log.info("[FlameOut][Key-Reset] 完成: activeState=null, saved to settings");
         }
 
-        if(Core.input.keyTap(KeyCode.x)){
+        if(FlameKeybinds.tap("key-next")){
             if(state < 5){
                 increment(false);
-                Log.info("[FlameOut][Key-X] 前进到下一阶段 -> " + state);
+                Log.info("[FlameOut][Key-Next] 前进到下一阶段 -> " + state);
             } else {
-                Log.info("[FlameOut][Key-X] 已达最大阶段 5，无法继续");
+                Log.info("[FlameOut][Key-Next] 已达最大阶段 5，无法继续");
             }
         }
 
-        if(Core.input.keyTap(KeyCode.v)){
-            Log.info("[FlameOut][Key-V] ==================== 启动剧情 ====================");
-            Log.info("[FlameOut][Key-V] 当前 state = " + state);
+        if(FlameKeybinds.tap("key-start")){
+            Log.info("[FlameOut][Key-Start] ==================== 启动剧情 ====================");
+            Log.info("[FlameOut][Key-Start] 当前 state = " + state);
             if(state == 0){
                 state = 1;
                 Core.settings.put("flame-special", state);
-                Log.info("[FlameOut][Key-V] state 为 0，强制设置为 1（Stage1）");
+                Log.info("[FlameOut][Key-Start] state 为 0，强制设置为 1（Stage1）");
             }
             if(state >= 1 && state <= 5){
-                Log.info("[FlameOut][Key-V] 调用 loadState(" + state + ") ...");
+                Log.info("[FlameOut][Key-Start] 调用 loadState(" + state + ") ...");
                 loadState();
                 if(activeState != null){
-                    Log.info("[FlameOut][Key-V]  activeState = " + activeState.getClass().getSimpleName());
-                    Log.info("[FlameOut][Key-V]  调用 loadAssets() ...");
+                    Log.info("[FlameOut][Key-Start]  activeState = " + activeState.getClass().getSimpleName());
+                    Log.info("[FlameOut][Key-Start]  调用 loadAssets() ...");
                     activeState.loadAssets();
-                    Log.info("[FlameOut][Key-V]  调用 loadClient() ...");
+                    Log.info("[FlameOut][Key-Start]  调用 loadClient() ...");
                     activeState.loadClient();
-                    Log.info("[FlameOut][Key-V]  剧情 Stage " + state + " 已启动！请查看菜单变化");
+                    Log.info("[FlameOut][Key-Start]  剧情 Stage " + state + " 已启动！请查看菜单变化");
                 } else {
-                    Log.err("[FlameOut][Key-V]  ERROR: loadState() 后 activeState 仍然为 null！");
+                    Log.err("[FlameOut][Key-Start]  ERROR: loadState() 后 activeState 仍然为 null！");
                 }
             } else {
-                Log.info("[FlameOut][Key-V] state=" + state + " > 5，请先按 Z 重置");
+                Log.info("[FlameOut][Key-Start] state=" + state + " > 5，请先重置");
             }
-            Log.info("[FlameOut][Key-V] ======================================================");
+            Log.info("[FlameOut][Key-Start] ======================================================");
         }
 
-        if(Core.input.keyTap(KeyCode.c)){
-            Log.info("[FlameOut][Key-C] ==================== 退出剧情 ====================");
-            Log.info("[FlameOut][Key-C] 重置 state 为 0 并重启游戏");
+        if(FlameKeybinds.tap("key-quit")){
+            Log.info("[FlameOut][Key-Quit] ==================== 退出剧情 ====================");
+            Log.info("[FlameOut][Key-Quit] 重置 state 为 0 并重启游戏");
             state = 0;
             Core.settings.put("flame-special", 0);
             activeState = null;
             Core.app.exit();
         }
 
-        if(Core.input.keyDown(KeyCode.b) && activeState != null){
+        if(FlameKeybinds.down("key-fastforward") && activeState != null){
             try{
                 java.lang.reflect.Field f = activeState.getClass().getDeclaredField("time");
                 f.setAccessible(true);
@@ -156,11 +157,13 @@ public class SpecialMain{
         Log.info("[FlameOut] ==================================================");
         Log.info("[FlameOut]  FlameOut mod loaded");
         Log.info("[FlameOut]  剧情快捷键:");
-        Log.info("[FlameOut]    [Z] 重置剧情到阶段 0");
-        Log.info("[FlameOut]    [X] 前进到下一阶段");
-        Log.info("[FlameOut]    [V] 启动剧情");
-        Log.info("[FlameOut]    [C] 退出剧情并重启游戏");
-        Log.info("[FlameOut]    [B] 按住快进，跳过等待阶段");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-reset") + "] 重置剧情到阶段 0");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-next") + "] 前进到下一阶段");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-start") + "] 启动剧情");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-quit") + "] 退出剧情并重启游戏");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-fastforward") + "] 按住快进，跳过等待阶段");
+        Log.info("[FlameOut]    [" + FlameKeybinds.get("key-sprites") + "] 隐藏贴图菜单");
+        Log.info("[FlameOut]  (可在游戏设置 -> FlameOut 中修改快捷键)");
         Log.info("[FlameOut] ==================================================");
 
         state = Core.settings.getInt("flame-special", 0);
