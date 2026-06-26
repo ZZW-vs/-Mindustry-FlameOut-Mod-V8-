@@ -130,6 +130,9 @@ public class SpecialMain{
     }
 
     public static void increment(boolean change){
+        if(state >= 6){
+            return;
+        }
         state++;
         Core.settings.put("flame-special", state);
         Log.info("[FlameOut][increment] state -> " + state + ", change=" + change);
