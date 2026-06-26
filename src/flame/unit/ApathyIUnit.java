@@ -416,6 +416,7 @@ public class ApathyIUnit extends UnitEntity{
                 sl.stop();
             }
         }
+        Log.info("[FlameOut][ApathyIUnit] remove called, isClearing=" + Groups.isClearing + ", spawnEnabled=" + FlameSettings.apathySpawnEmpathy);
         if(!Groups.isClearing && FlameSettings.apathySpawnEmpathy){
             EmpathyDamage.spawnEmpathy(x, y);
         }

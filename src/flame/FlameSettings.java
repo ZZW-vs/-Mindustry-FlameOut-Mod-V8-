@@ -173,6 +173,11 @@ public class FlameSettings{
             save();
         }).left().padBottom(10f).row();
 
+        t.button("重置共鸣生成器", () -> {
+            flame.unit.empathy.EmpathyDamage.resetSpawner();
+        }).size(200f, 40f).left().padBottom(4f).row();
+        t.add("清除当前共鸣生成状态，重新开始生成").left().padBottom(10f).color(Color.lightGray).row();
+
         t.row();
         t.add("提示：修改后立即生效").left().padTop(20f).color(Color.lightGray).row();
     }

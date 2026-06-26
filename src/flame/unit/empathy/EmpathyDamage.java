@@ -134,13 +134,37 @@ public class EmpathyDamage{
     }
 
     public static void spawnEmpathy(float x, float y){
-        if(spawner == null && SpecialMain.validEmpathySpawn()){
-            EmpathySpawner s = new EmpathySpawner();
-            s.x = x;
-            s.y = y;
-            s.active = true;
-            s.shouldSpawn = true;
-            spawner = s;
+        Log.info("[FlameOut][EmpathyDamage] spawnEmpathy called at " + (int)x + "," + (int)y + ", spawner=" + (spawner == null ? "null" : "exists") + ", validSpawn=" + SpecialMain.validEmpathySpawn());
+        if(SpecialMain.validEmpathySpawn()){
+            if(spawner == null){
+                spawner = new EmpathySpawner();
+                Log.info("[FlameOut][EmpathyDamage] spawner created (new)");
+            }else{
+                Log.info("[FlameOut][EmpathyDamage] spawner reset (reuse)");
+            }
+            spawner.x = x;
+            spawner.y = y;
+            spawner.active = true;
+            spawner.spawned = false;
+            spawner.time = 0f;
+            spawner.shouldSpawn = true;
+            spawner.disabled = false;
+            spawner.reactivateTime = 0f;
+            spawner.timeScl = 1;
+            spawner.health = -1;
+            spawner.countDown = 0;
+            Log.info("[FlameOut][EmpathyDamage] spawnEmpathy activated successfully");
+        }
+    }
+
+    public static void resetSpawner(){
+        if(spawner != null){
+            spawner.active = false;
+            spawner.spawned = false;
+            spawner.shouldSpawn = false;
+            spawner.disabled = true;
+            spawner = null;
+            Log.info("[FlameOut][EmpathyDamage] spawner reset to null");
         }
     }
 
