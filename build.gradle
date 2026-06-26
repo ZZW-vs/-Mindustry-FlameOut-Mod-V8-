@@ -91,12 +91,23 @@ tasks.register('deploy', Jar){
     dependsOn jarAndroid
     dependsOn jar
     archiveFileName = "flameout.jar"
+    destinationDirectory = file("build/deploy-output")
 
-    from{ [zipTree("build/libs/flameout.jar"), zipTree("build/libs/flameoutAndroid.jar")] }
+    doFirst{
+        def desktopJar = file("build/libs/flameout.jar")
+        def androidJar = file("build/libs/flameoutAndroid.jar")
+        if(!desktopJar.exists()) throw new GradleException("Desktop jar not found: $desktopJar")
+        if(!androidJar.exists()) throw new GradleException("Android jar not found: $androidJar")
+    }
+
+    from{ [zipTree(file("build/libs/flameout.jar")), zipTree(file("build/libs/flameoutAndroid.jar"))] }
 
     doLast{
-        delete{
-            delete "build/libs/flameoutAndroid.jar"
+        delete file("build/libs/flameoutAndroid.jar")
+        copy{
+            from file("build/deploy-output/flameout.jar")
+            into file("build/libs/")
         }
+        delete file("build/deploy-output")
     }
 }
