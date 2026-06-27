@@ -137,9 +137,15 @@ public class FlameSettings{
         rightPane.defaults().pad(2f);
         buildRightPane(rightPane);
 
-        mainLayout.add(leftPane).fillX().height(500f);
+        // 用 ScrollPane 包裹，防止内容过多显示不全
+        ScrollPane leftScroll = new ScrollPane(leftPane, Styles.smallPane);
+        ScrollPane rightScroll = new ScrollPane(rightPane, Styles.smallPane);
+        leftScroll.setScrollingDisabled(true, false);
+        rightScroll.setScrollingDisabled(true, false);
+
+        mainLayout.add(leftScroll).fillX().height(500f);
         mainLayout.row();
-        mainLayout.add(rightPane).width(260f).padLeft(10f);
+        mainLayout.add(rightScroll).width(260f).padLeft(10f);
 
         t.add(mainLayout).fill().expand();
     }
