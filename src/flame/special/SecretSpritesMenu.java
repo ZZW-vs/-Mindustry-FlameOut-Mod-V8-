@@ -17,7 +17,7 @@ import mindustry.ui.dialogs.*;
 
 public class SecretSpritesMenu{
     public static Seq<PlacedSprite> placed = new Seq<>();
-    static BaseDialog dialog;
+    public static BaseDialog dialog;
     static float selectedSize = 8f;
     static float selectedRot = 0f;
     static float selectedScaleX = 1f;

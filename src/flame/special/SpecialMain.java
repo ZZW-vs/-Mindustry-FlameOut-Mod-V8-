@@ -158,6 +158,37 @@ public class SpecialMain{
         return activeState != null;
     }
 
+    public static void resetStory(){
+        state = 0;
+        Core.settings.put("flame-special", 0);
+        activeState = null;
+    }
+
+    public static void startStory(){
+        if(state == 0){
+            state = 1;
+            Core.settings.put("flame-special", state);
+        }
+        if(state >= 1 && state <= 5){
+            loadState();
+            if(activeState != null){
+                activeState.loadAssets();
+                activeState.loadClient();
+            }
+        }
+    }
+
+    public static void fastForward(){
+        if(activeState != null){
+            try{
+                java.lang.reflect.Field f = activeState.getClass().getDeclaredField("time");
+                f.setAccessible(true);
+                float t = (float)f.get(activeState);
+                f.set(activeState, t + 30f * 60f);
+            }catch(Exception ignored){}
+        }
+    }
+
     public static boolean validEmpathySpawn(){
         return state == 0 || state >= 5;
     }
