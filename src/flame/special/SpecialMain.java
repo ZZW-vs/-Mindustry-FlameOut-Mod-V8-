@@ -19,8 +19,8 @@ public class SpecialMain{
     static Texture main;
     static SpecialState activeState;
 
-    private static int state = 0;
-    private static float logTimer = 0f;   // 周期性状态报告的计时器
+    static int state = 0;
+    private static float logTimer = 0f;
 
     public static void draw(){
         if(activeState != null && !FlameSettings.disableStory){
@@ -37,6 +37,8 @@ public class SpecialMain{
         }
 
         SecretSpritesMenu.update();
+        MobileControls.update();
+        FlameHudInfo.update();
 
         // 每 2 秒输出一次当前状态，方便调试
         logTimer += Time.delta;
@@ -152,6 +154,10 @@ public class SpecialMain{
         return state;
     }
 
+    public static boolean isActive(){
+        return activeState != null;
+    }
+
     public static boolean validEmpathySpawn(){
         return state == 0 || state >= 5;
     }
@@ -220,6 +226,7 @@ public class SpecialMain{
             Log.info("[FlameOut][load] 剧情已禁用，跳过剧情状态加载");
             state = 0;
             activeState = null;
+            MobileControls.load();
             return;
         }
 
@@ -231,6 +238,8 @@ public class SpecialMain{
         } else {
             Log.info("[FlameOut][load] 未自动加载任何阶段（state=" + state + "，按 V 手动启动）");
         }
+
+        MobileControls.load();
     }
 
     public static void loadClient(){

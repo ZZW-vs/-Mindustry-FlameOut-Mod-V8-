@@ -23,6 +23,11 @@ public class FlameSettings{
     public static final String keySpriteScaleY = "flame-sprite-scaley";
     public static final String keyDisableStory = "flame-disable-story";
     public static final String keyDisableStoryKeys = "flame-disable-story-keys";
+    public static final String keyMobileControls = "flame-mobile-controls";
+    public static final String keyMobilePosX = "flame-mobile-posx";
+    public static final String keyMobilePosY = "flame-mobile-posy";
+    public static final String keyMobileMode = "flame-mobile-mode";
+    public static final String keyShowHudInfo = "flame-show-hud-info";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
@@ -34,6 +39,9 @@ public class FlameSettings{
     public static float spriteScaleY = 1f;
     public static boolean disableStory = false;
     public static boolean disableStoryKeys = false;
+    public static boolean mobileControls = true;
+    public static boolean mobileMode = false;
+    public static boolean showHudInfo = false;
 
     static final String[] bloodColorNames = {
         "血色(原版)",
@@ -72,6 +80,9 @@ public class FlameSettings{
         spriteScaleY = Core.settings.getFloat(keySpriteScaleY, 1f);
         disableStory = Core.settings.getBool(keyDisableStory, false);
         disableStoryKeys = Core.settings.getBool(keyDisableStoryKeys, false);
+        mobileControls = Core.settings.getBool(keyMobileControls, true);
+        mobileMode = Core.settings.getBool(keyMobileMode, false);
+        showHudInfo = Core.settings.getBool(keyShowHudInfo, false);
         applyBloodColor();
     }
 
@@ -86,6 +97,9 @@ public class FlameSettings{
         Core.settings.put(keySpriteScaleY, spriteScaleY);
         Core.settings.put(keyDisableStory, disableStory);
         Core.settings.put(keyDisableStoryKeys, disableStoryKeys);
+        Core.settings.put(keyMobileControls, mobileControls);
+        Core.settings.put(keyMobileMode, mobileMode);
+        Core.settings.put(keyShowHudInfo, showHudInfo);
     }
 
     public static void applyBloodColor(){
@@ -125,22 +139,26 @@ public class FlameSettings{
         main.margin(10f);
 
         Table tabBar = new Table();
-        tabBar.button("单位设置", Styles.flatt, () -> {
+        tabBar.button("兼容性", Styles.flatt, () -> {
             currentTab = 0;
             rebuildContent();
-        }).size(140f, 40f).pad(4f);
-        tabBar.button("剧情设置", Styles.flatt, () -> {
+        }).size(120f, 40f).pad(4f);
+        tabBar.button("单位设置", Styles.flatt, () -> {
             currentTab = 1;
             rebuildContent();
-        }).size(140f, 40f).pad(4f);
-        tabBar.button("视觉设置", Styles.flatt, () -> {
+        }).size(120f, 40f).pad(4f);
+        tabBar.button("剧情设置", Styles.flatt, () -> {
             currentTab = 2;
             rebuildContent();
-        }).size(140f, 40f).pad(4f);
-        tabBar.button("键位设置", Styles.flatt, () -> {
+        }).size(120f, 40f).pad(4f);
+        tabBar.button("视觉设置", Styles.flatt, () -> {
             currentTab = 3;
             rebuildContent();
-        }).size(140f, 40f).pad(4f);
+        }).size(120f, 40f).pad(4f);
+        tabBar.button("键位设置", Styles.flatt, () -> {
+            currentTab = 4;
+            rebuildContent();
+        }).size(120f, 40f).pad(4f);
 
         main.add(tabBar).fillX().row();
 
@@ -156,13 +174,73 @@ public class FlameSettings{
     static void rebuildContent(){
         contentTable.clearChildren();
         if(currentTab == 0){
-            buildUnitTab(contentTable);
+            buildCompatTab(contentTable);
         }else if(currentTab == 1){
-            buildStoryTab(contentTable);
+            buildUnitTab(contentTable);
         }else if(currentTab == 2){
+            buildStoryTab(contentTable);
+        }else if(currentTab == 3){
             buildVisualTab(contentTable);
-        }else{
-            FlameKeybinds.rebuildTable(contentTable);
+        }else if(currentTab == 4){
+            if(mobileMode){
+                contentTable.add("手机版兼容模式下键位设置已禁用").color(Color.lightGray).pad(20f).row();
+                contentTable.add("请使用游戏内虚拟按键").color(Color.lightGray).pad(10f).row();
+            }else{
+                FlameKeybinds.rebuildTable(contentTable);
+            }
+        }
+    }
+
+    static void buildCompatTab(Table t){
+        t.add("兼容性设置").fontScale(1.2f).left().padBottom(10f).row();
+
+        t.left();
+
+        t.check("手机版兼容模式", mobileMode, b -> {
+            mobileMode = b;
+            if(b){
+                mobileControls = true;
+                disableStoryKeys = true;
+            }
+            save();
+            if(flame.special.MobileControls.buttonTable != null){
+                flame.special.MobileControls.enabled = mobileControls;
+                if(mobileControls){
+                    flame.special.MobileControls.build();
+                }else{
+                    flame.special.MobileControls.dispose();
+                }
+            }
+            rebuildContent();
+        }).left().padBottom(6f).row();
+        t.add("启用后自动开启虚拟按键、禁用剧情快捷键、隐藏键位设置").left().padBottom(10f).color(Color.lightGray).row();
+
+        t.check("显示虚拟按键", mobileControls, b -> {
+            mobileControls = b;
+            save();
+            if(flame.special.MobileControls.buttonTable != null){
+                flame.special.MobileControls.enabled = b;
+                if(b){
+                    flame.special.MobileControls.build();
+                }else{
+                    flame.special.MobileControls.dispose();
+                }
+            }
+        }).left().padBottom(6f).row();
+        t.add("手机版显示可拖动的虚拟按键面板").left().padBottom(10f).color(Color.lightGray).row();
+
+        t.check("显示终端信息", showHudInfo, b -> {
+            showHudInfo = b;
+            save();
+        }).left().padBottom(6f).row();
+        t.add("游戏内左上角显示简洁状态信息").left().padBottom(10f).color(Color.lightGray).row();
+
+        t.row();
+        if(mobileMode){
+            t.add("已启用兼容模式：").color(Color.acid).left().padTop(8f).row();
+            t.add("  - 虚拟按键已开启").left().color(Color.lightGray).row();
+            t.add("  - 剧情快捷键已禁用").left().color(Color.lightGray).row();
+            t.add("  - 键位设置已隐藏").left().color(Color.lightGray).padBottom(10f).row();
         }
     }
 

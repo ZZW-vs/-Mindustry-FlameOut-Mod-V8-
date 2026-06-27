@@ -38,7 +38,7 @@ public class SecretSpritesMenu{
         rebuild();
     }
 
-    static void rebuild(){
+    public static void rebuild(){
         dialog.cont.clear();
         dialog.buttons.clear();
 
