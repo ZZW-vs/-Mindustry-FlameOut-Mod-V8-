@@ -68,9 +68,10 @@ public class FlameSettings{
         new Color(0.2f, 0.8f, 0.3f)
     };
 
-    static Table settingsTable;
     static Label hudLabel;
     static Table mobileButtons;
+    static Table leftPane;
+    static Table rightPane;
 
     public static void load(){
         autoRestart = Core.settings.getBool(keyAutoRestart, true);
@@ -116,41 +117,34 @@ public class FlameSettings{
     }
 
     public static void rebuildAll(){
-        if(settingsTable != null){
-            buildAll(settingsTable);
-        }
+        if(leftPane != null) buildLeftPane(leftPane);
+        if(rightPane != null) buildRightPane(rightPane);
     }
 
     public static void buildAll(Table t){
-        settingsTable = t;
         t.clearChildren();
+        t.left();
 
-        Table mainLayout = new Table();
-        mainLayout.defaults().pad(4f);
-
-        Table leftPane = new Table();
+        // 左栏：设置内容
+        leftPane = new Table();
         leftPane.left();
         buildLeftPane(leftPane);
 
-        Table rightPane = new Table();
+        // 右栏：终端信息 + 虚拟按键
+        rightPane = new Table();
         rightPane.left();
-        rightPane.defaults().pad(2f);
         buildRightPane(rightPane);
 
-        // 用 ScrollPane 包裹，防止内容过多显示不全
-        ScrollPane leftScroll = new ScrollPane(leftPane, Styles.smallPane);
-        ScrollPane rightScroll = new ScrollPane(rightPane, Styles.smallPane);
-        leftScroll.setScrollingDisabled(true, false);
-        rightScroll.setScrollingDisabled(true, false);
+        // 直接并排添加
+        Table row = new Table();
+        row.add(leftPane).fillX();
+        row.add(rightPane).width(260f).padLeft(10f);
 
-        mainLayout.add(leftScroll).fillX().height(500f);
-        mainLayout.row();
-        mainLayout.add(rightScroll).width(260f).padLeft(10f);
-
-        t.add(mainLayout).fill().expand();
+        t.add(row).fill().expandY();
     }
 
     static void buildLeftPane(Table t){
+        t.clearChildren();
         t.add("兼容性").fontScale(1.1f).color(Color.acid).padTop(4f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
@@ -287,6 +281,8 @@ public class FlameSettings{
     }
 
     static void buildRightPane(Table t){
+        t.clearChildren();
+
         t.add("终端信息").fontScale(1f).color(Color.acid).padTop(4f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(4f).row();
 
