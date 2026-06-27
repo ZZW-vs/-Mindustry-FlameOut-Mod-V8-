@@ -62,7 +62,7 @@ public class SpecialMain{
 
     public static void updateTest(){
         if(Core.input.keyTap(KeyCode.f5)){
-            FlameSettings.showDialog();
+            FlameSettings.showSettings();
         }
 
         if(FlameSettings.disableStoryKeys || FlameSettings.disableStory){

@@ -10,7 +10,6 @@ import mindustry.*;
 import mindustry.game.EventType.*;
 import mindustry.ui.*;
 import mindustry.ui.dialogs.*;
-import mindustry.core.GameState.*;
 
 public class FlameSettings{
     public static final String keyAutoRestart = "flame-autorestart";
@@ -65,9 +64,7 @@ public class FlameSettings{
         new Color(0.2f, 0.8f, 0.3f)
     };
 
-    static BaseDialog dialog;
-    static int currentTab = 0;
-    static Table contentTable;
+    static Table settingsTable;
 
     public static void load(){
         autoRestart = Core.settings.getBool(keyAutoRestart, true);
@@ -108,93 +105,25 @@ public class FlameSettings{
         }
     }
 
-    static boolean wasPaused = false;
-
-    public static void showDialog(){
-        if(dialog == null){
-            dialog = new BaseDialog("FlameOut 设置");
-            rebuild();
-            dialog.shown(() -> {
-                if(Vars.state.isGame()){
-                    wasPaused = Vars.state.isPaused();
-                    if(!wasPaused){
-                        Vars.state.set(State.paused);
-                    }
-                }
-            });
-            dialog.hidden(() -> {
-                if(Vars.state.isGame() && !wasPaused){
-                    Vars.state.set(State.playing);
-                }
-            });
-        }
-        dialog.show();
+    public static void showSettings(){
+        Vars.ui.settings.show();
     }
 
-    static void rebuild(){
-        dialog.cont.clear();
-        dialog.buttons.clear();
-
-        Table main = new Table();
-        main.margin(10f);
-
-        Table tabBar = new Table();
-        tabBar.button("兼容性", Styles.flatt, () -> {
-            currentTab = 0;
-            rebuildContent();
-        }).size(120f, 40f).pad(4f);
-        tabBar.button("单位设置", Styles.flatt, () -> {
-            currentTab = 1;
-            rebuildContent();
-        }).size(120f, 40f).pad(4f);
-        tabBar.button("剧情设置", Styles.flatt, () -> {
-            currentTab = 2;
-            rebuildContent();
-        }).size(120f, 40f).pad(4f);
-        tabBar.button("视觉设置", Styles.flatt, () -> {
-            currentTab = 3;
-            rebuildContent();
-        }).size(120f, 40f).pad(4f);
-        tabBar.button("键位设置", Styles.flatt, () -> {
-            currentTab = 4;
-            rebuildContent();
-        }).size(120f, 40f).pad(4f);
-
-        main.add(tabBar).fillX().row();
-
-        contentTable = new Table();
-        contentTable.marginTop(10f);
-        rebuildContent();
-        main.add(contentTable).fillX().row();
-
-        dialog.cont.add(main).fillX().row();
-        dialog.addCloseButton();
-    }
-
-    static void rebuildContent(){
-        contentTable.clearChildren();
-        if(currentTab == 0){
-            buildCompatTab(contentTable);
-        }else if(currentTab == 1){
-            buildUnitTab(contentTable);
-        }else if(currentTab == 2){
-            buildStoryTab(contentTable);
-        }else if(currentTab == 3){
-            buildVisualTab(contentTable);
-        }else if(currentTab == 4){
-            if(mobileMode){
-                contentTable.add("手机版兼容模式下键位设置已禁用").color(Color.lightGray).pad(20f).row();
-                contentTable.add("请使用游戏内虚拟按键").color(Color.lightGray).pad(10f).row();
-            }else{
-                FlameKeybinds.rebuildTable(contentTable);
-            }
+    public static void rebuildAll(){
+        if(settingsTable != null){
+            buildAll(settingsTable);
         }
     }
 
-    static void buildCompatTab(Table t){
-        t.add("兼容性设置").fontScale(1.2f).left().padBottom(10f).row();
-
+    public static void buildAll(Table t){
+        settingsTable = t;
+        t.clearChildren();
         t.left();
+        t.defaults().left();
+
+        // === 兼容性 ===
+        t.add("兼容性").fontScale(1.15f).color(Color.acid).padTop(4f).row();
+        t.image().fillX().height(3f).color(Color.gray).padBottom(8f).row();
 
         t.check("手机版兼容模式", mobileMode, b -> {
             mobileMode = b;
@@ -211,9 +140,9 @@ public class FlameSettings{
                     flame.special.MobileControls.dispose();
                 }
             }
-            rebuildContent();
-        }).left().padBottom(6f).row();
-        t.add("启用后自动开启虚拟按键、禁用剧情快捷键、隐藏键位设置").left().padBottom(10f).color(Color.lightGray).row();
+            rebuildAll();
+        }).padBottom(4f).row();
+        t.add("启用后自动开启虚拟按键、禁用剧情快捷键、隐藏键位设置").color(Color.lightGray).padBottom(6f).row();
 
         t.check("显示虚拟按键", mobileControls, b -> {
             mobileControls = b;
@@ -226,70 +155,57 @@ public class FlameSettings{
                     flame.special.MobileControls.dispose();
                 }
             }
-        }).left().padBottom(6f).row();
-        t.add("手机版显示可拖动的虚拟按键面板").left().padBottom(10f).color(Color.lightGray).row();
+        }).padBottom(4f).row();
+        t.add("手机版显示可拖动的虚拟按键面板").color(Color.lightGray).padBottom(6f).row();
 
         t.check("显示终端信息", showHudInfo, b -> {
             showHudInfo = b;
             save();
-        }).left().padBottom(6f).row();
-        t.add("游戏内左上角显示简洁状态信息").left().padBottom(10f).color(Color.lightGray).row();
+        }).padBottom(4f).row();
+        t.add("游戏内左上角显示简洁状态信息").color(Color.lightGray).padBottom(10f).row();
 
-        t.row();
-        if(mobileMode){
-            t.add("已启用兼容模式：").color(Color.acid).left().padTop(8f).row();
-            t.add("  - 虚拟按键已开启").left().color(Color.lightGray).row();
-            t.add("  - 剧情快捷键已禁用").left().color(Color.lightGray).row();
-            t.add("  - 键位设置已隐藏").left().color(Color.lightGray).padBottom(10f).row();
-        }
-    }
-
-    static void buildUnitTab(Table t){
-        t.add("单位设置").fontScale(1.2f).left().padBottom(10f).row();
-
-        t.left();
+        // === 单位 ===
+        t.add("单位").fontScale(1.15f).color(Color.acid).padTop(10f).row();
+        t.image().fillX().height(3f).color(Color.gray).padBottom(8f).row();
 
         t.check("冷漠死后生成共鸣", apathySpawnEmpathy, b -> {
             apathySpawnEmpathy = b;
             save();
-        }).left().padBottom(10f).row();
+        }).padBottom(6f).row();
 
         t.check("共鸣跨地图重生", empathyRespawn, b -> {
             empathyRespawn = b;
             save();
-        }).left().padBottom(10f).row();
+        }).padBottom(6f).row();
 
-        t.button("重置共鸣生成器", () -> {
+        t.button("重置共鸣生成器", Styles.flatt, () -> {
             flame.unit.empathy.EmpathyDamage.resetSpawner();
-        }).size(200f, 40f).left().padBottom(4f).row();
-        t.add("清除当前共鸣生成状态，重新开始生成").left().padBottom(10f).color(Color.lightGray).row();
+        }).size(200f, 36f).padBottom(4f).row();
+        t.add("清除当前共鸣生成状态").color(Color.lightGray).padBottom(10f).row();
 
-        t.row();
-        t.add("提示：修改后立即生效").left().padTop(20f).color(Color.lightGray).row();
-    }
-
-    static void buildStoryTab(Table t){
-        t.add("剧情设置").fontScale(1.2f).left().padBottom(10f).row();
-
-        t.left();
+        // === 剧情 ===
+        t.add("剧情").fontScale(1.15f).color(Color.acid).padTop(10f).row();
+        t.image().fillX().height(3f).color(Color.gray).padBottom(8f).row();
 
         t.check("禁用剧情", disableStory, b -> {
             disableStory = b;
             save();
-        }).left().padBottom(10f).row();
+        }).padBottom(6f).row();
 
         t.check("禁用剧情快捷键", disableStoryKeys, b -> {
             disableStoryKeys = b;
             save();
-        }).left().padBottom(10f).row();
+        }).padBottom(6f).row();
 
         t.check("自动重启游戏", autoRestart, b -> {
             autoRestart = b;
             save();
-        }).left().padBottom(10f).row();
+        }).padBottom(6f).row();
 
-        t.add("自动重启时间(秒): ").left();
-        t.field(restartTime + "", s -> {
+        Table restartRow = new Table();
+        restartRow.left();
+        restartRow.add("自动重启时间(秒): ").left();
+        restartRow.field(restartTime + "", s -> {
             try{
                 float v = Float.parseFloat(s);
                 if(v < 1f) v = 1f;
@@ -297,24 +213,20 @@ public class FlameSettings{
                 restartTime = v;
                 save();
             }catch(Exception ignored){}
-        }).width(120f).left().row();
-
-        t.row();
-        t.add("贴图设置").fontScale(1.1f).left().padTop(15f).padBottom(8f).row();
+        }).width(100f);
+        t.add(restartRow).padBottom(6f).row();
 
         t.check("使用原版剧情贴图", useOriginalSprites, b -> {
             useOriginalSprites = b;
             save();
-        }).left().padBottom(4f).row();
-        t.add("重启游戏后生效").left().padBottom(10f).color(Color.lightGray).row();
-    }
+        }).padBottom(4f).row();
+        t.add("重启游戏后生效").color(Color.lightGray).padBottom(10f).row();
 
-    static void buildVisualTab(Table t){
-        t.add("视觉设置").fontScale(1.2f).left().padBottom(10f).row();
+        // === 视觉 ===
+        t.add("视觉").fontScale(1.15f).color(Color.acid).padTop(10f).row();
+        t.image().fillX().height(3f).color(Color.gray).padBottom(8f).row();
 
-        t.left();
-
-        t.add("血液颜色: ").left().padBottom(8f).row();
+        t.add("血液颜色:").padBottom(6f).row();
 
         Table colors = new Table();
         colors.left();
@@ -324,8 +236,8 @@ public class FlameSettings{
                 bloodColorIndex = idx;
                 save();
                 applyBloodColor();
-                rebuildContent();
-            }).size(180f, 40f).pad(2f).left().get();
+                rebuildAll();
+            }).size(140f, 36f).pad(2f).left().get();
             b.update(() -> {
                 if(bloodColorIndex == idx){
                     b.setColor(1f, 1f, 1f, 1f);
@@ -335,11 +247,17 @@ public class FlameSettings{
             });
             if((i + 1) % 2 == 0) colors.row();
         }
-        ScrollPane pane = new ScrollPane(colors, Styles.smallPane);
-        pane.setScrollingDisabled(true, false);
-        t.add(pane).width(420f).maxHeight(300f).left().row();
+        t.add(colors).padBottom(10f).row();
 
-        t.row();
-        t.add("提示：修改后立即生效").left().padTop(20f).color(Color.lightGray).row();
+        // === 键位 ===
+        t.add("键位").fontScale(1.15f).color(Color.acid).padTop(10f).row();
+        t.image().fillX().height(3f).color(Color.gray).padBottom(8f).row();
+
+        if(mobileMode){
+            t.add("手机版兼容模式下键位设置已禁用").color(Color.lightGray).padBottom(6f).row();
+            t.add("请使用游戏内虚拟按键").color(Color.lightGray).padBottom(10f).row();
+        }else{
+            FlameKeybinds.rebuildTable(t);
+        }
     }
 }

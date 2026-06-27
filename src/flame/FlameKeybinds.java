@@ -58,7 +58,7 @@ public class FlameKeybinds{
         Events.on(ClientLoadEvent.class, e -> {
             Vars.ui.settings.addCategory("FlameOut", t -> {
                 t.margin(14f);
-                rebuildTable(t);
+                FlameSettings.buildAll(t);
             });
         });
     }

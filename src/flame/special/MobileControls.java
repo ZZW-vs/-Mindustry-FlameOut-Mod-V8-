@@ -128,7 +128,7 @@ public class MobileControls{
 
         if(expanded){
             Button btn1 = content.button(Icon.settings, Styles.cleari, () -> {
-                FlameSettings.showDialog();
+                FlameSettings.showSettings();
             }).size(buttonSize).pad(2f).get();
 
             Button btn2 = content.button(Icon.tree, Styles.cleari, () -> {
