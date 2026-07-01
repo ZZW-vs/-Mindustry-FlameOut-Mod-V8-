@@ -201,7 +201,11 @@ public class FlameSettings{
             t.add("  手机版兼容模式下键位设置已禁用").left().color(Color.lightGray).row();
             t.add("  请使用游戏内虚拟按键面板").left().color(Color.lightGray).padBottom(4f).row();
         }else{
-            FlameKeybinds.rebuildTable(t);
+            // 用子表格承载键位设置，避免 rebuildTable 清空整个表格
+            Table keybindTable = new Table();
+            keybindTable.left();
+            t.add(keybindTable).left().fillX().row();
+            FlameKeybinds.rebuildTable(keybindTable);
         }
 
         // === 手机版快捷操作（仅手机版兼容模式） ===
