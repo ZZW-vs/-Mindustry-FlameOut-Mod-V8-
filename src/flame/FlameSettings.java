@@ -2,10 +2,8 @@ package flame;
 
 import arc.*;
 import arc.graphics.*;
-import arc.scene.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
-import arc.struct.*;
 import arc.util.*;
 import flame.special.*;
 import mindustry.*;
@@ -47,14 +45,8 @@ public class FlameSettings{
     public static boolean showHudInfo = false;
 
     static final String[] bloodColorNames = {
-        "血色(原版)",
-        "白色",
-        "黄色",
-        "黑色",
-        "蓝色",
-        "紫色",
-        "橙色",
-        "绿色"
+        "血色(原版)", "白色", "黄色", "黑色",
+        "蓝色", "紫色", "橙色", "绿色"
     };
 
     static final Color[] bloodColors = {
@@ -68,10 +60,7 @@ public class FlameSettings{
         new Color(0.2f, 0.8f, 0.3f)
     };
 
-    static Label hudLabel;
-    static Table mobileButtons;
-    static Table leftPane;
-    static Table rightPane;
+    static Table rootTable;
 
     public static void load(){
         autoRestart = Core.settings.getBool(keyAutoRestart, true);
@@ -117,309 +106,174 @@ public class FlameSettings{
     }
 
     public static void rebuildAll(){
-        if(leftPane != null) buildLeftPane(leftPane);
-        if(rightPane != null) buildRightPane(rightPane);
+        if(rootTable != null) buildAll(rootTable);
     }
 
     public static void buildAll(Table t){
+        rootTable = t;
         t.clearChildren();
-        t.left();
+        t.left().top();
 
-        // 左栏：设置内容
-        leftPane = new Table();
-        leftPane.left();
-        buildLeftPane(leftPane);
-
-        // 右栏：终端信息 + 虚拟按键
-        rightPane = new Table();
-        rightPane.left();
-        buildRightPane(rightPane);
-
-        // 直接并排添加
-        Table row = new Table();
-        row.add(leftPane).fillX();
-        row.add(rightPane).width(260f).padLeft(10f);
-
-        t.add(row).fill().expandY();
-    }
-
-    static void buildLeftPane(Table t){
-        t.clearChildren();
-        t.add("兼容性").fontScale(1.1f).color(Color.acid).padTop(4f).row();
+        // === 兼容性 ===
+        t.add("[accent]兼容性[]").left().padTop(6f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
         t.check("手机版兼容模式", mobileMode, b -> {
             mobileMode = b;
-            if(b){
-                mobileControls = true;
-                disableStoryKeys = true;
-            }
+            if(b){ mobileControls = true; disableStoryKeys = true; }
             save();
             if(MobileControls.buttonTable != null){
                 MobileControls.enabled = mobileControls;
-                if(mobileControls){
-                    MobileControls.build();
-                }else{
-                    MobileControls.dispose();
-                }
+                if(mobileControls) MobileControls.build(); else MobileControls.dispose();
             }
             rebuildAll();
-        }).padBottom(4f).row();
-        t.add("启用后自动开启虚拟按键、禁用剧情快捷键、隐藏键位设置").color(Color.lightGray).padBottom(6f).row();
+        }).left().row();
+        t.add("  启用后自动开启虚拟按键、禁用剧情快捷键、隐藏键位设置").left().color(Color.lightGray).row();
 
         t.check("显示虚拟按键", mobileControls, b -> {
             mobileControls = b;
             save();
             if(MobileControls.buttonTable != null){
                 MobileControls.enabled = b;
-                if(b){
-                    MobileControls.build();
-                }else{
-                    MobileControls.dispose();
-                }
+                if(b) MobileControls.build(); else MobileControls.dispose();
             }
-        }).padBottom(4f).row();
-        t.add("手机版显示可拖动的虚拟按键面板").color(Color.lightGray).padBottom(10f).row();
+        }).left().row();
+        t.add("  手机版显示可拖动的虚拟按键面板").left().color(Color.lightGray).padBottom(4f).row();
 
         t.check("显示终端信息", showHudInfo, b -> {
             showHudInfo = b;
             save();
-        }).padBottom(4f).row();
-        t.add("游戏内左上角显示简洁状态信息").color(Color.lightGray).padBottom(10f).row();
+        }).left().row();
+        t.add("  游戏内左上角显示简洁状态信息").left().color(Color.lightGray).padBottom(4f).row();
 
-        t.add("单位").fontScale(1.1f).color(Color.acid).padTop(8f).row();
+        // === 单位 ===
+        t.add("[accent]单位[]").left().padTop(10f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
-        t.check("冷漠死后生成共鸣", apathySpawnEmpathy, b -> {
-            apathySpawnEmpathy = b;
-            save();
-        }).padBottom(4f).row();
-
-        t.check("共鸣跨地图重生", empathyRespawn, b -> {
-            empathyRespawn = b;
-            save();
-        }).padBottom(4f).row();
-
+        t.check("冷漠死后生成共鸣", apathySpawnEmpathy, b -> { apathySpawnEmpathy = b; save(); }).left().row();
+        t.check("共鸣跨地图重生", empathyRespawn, b -> { empathyRespawn = b; save(); }).left().row();
         t.button("重置共鸣生成器", Styles.flatt, () -> {
             flame.unit.empathy.EmpathyDamage.resetSpawner();
-        }).size(200f, 36f).padBottom(4f).row();
-        t.add("清除当前共鸣生成状态").color(Color.lightGray).padBottom(10f).row();
+        }).size(200f, 36f).left().row();
+        t.add("  清除当前共鸣生成状态").left().color(Color.lightGray).padBottom(4f).row();
 
-        t.add("剧情").fontScale(1.1f).color(Color.acid).padTop(8f).row();
+        // === 剧情 ===
+        t.add("[accent]剧情[]").left().padTop(10f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
-        t.check("禁用剧情", disableStory, b -> {
-            disableStory = b;
-            save();
-        }).padBottom(4f).row();
-
-        t.check("禁用剧情快捷键", disableStoryKeys, b -> {
-            disableStoryKeys = b;
-            save();
-        }).padBottom(4f).row();
-
-        t.check("自动重启游戏", autoRestart, b -> {
-            autoRestart = b;
-            save();
-        }).padBottom(4f).row();
+        t.check("禁用剧情", disableStory, b -> { disableStory = b; save(); }).left().row();
+        t.check("禁用剧情快捷键", disableStoryKeys, b -> { disableStoryKeys = b; save(); }).left().row();
+        t.check("自动重启游戏", autoRestart, b -> { autoRestart = b; save(); }).left().row();
 
         Table restartRow = new Table();
         restartRow.left();
         restartRow.add("自动重启时间(秒): ").left();
         restartRow.field(restartTime + "", s -> {
-            try{
-                float v = Float.parseFloat(s);
-                if(v < 1f) v = 1f;
-                if(v > 300f) v = 300f;
-                restartTime = v;
-                save();
-            }catch(Exception ignored){}
-        }).width(100f);
-        t.add(restartRow).padBottom(4f).row();
+            try{ float v = Float.parseFloat(s); if(v<1f)v=1f; if(v>300f)v=300f; restartTime=v; save(); }catch(Exception ignored){}
+        }).width(80f);
+        t.add(restartRow).left().row();
 
-        t.check("使用原版剧情贴图", useOriginalSprites, b -> {
-            useOriginalSprites = b;
-            save();
-        }).padBottom(4f).row();
-        t.add("重启游戏后生效").color(Color.lightGray).padBottom(10f).row();
+        t.check("使用原版剧情贴图", useOriginalSprites, b -> { useOriginalSprites = b; save(); }).left().row();
+        t.add("  重启游戏后生效").left().color(Color.lightGray).padBottom(4f).row();
 
-        t.add("视觉").fontScale(1.1f).color(Color.acid).padTop(8f).row();
+        // === 视觉 ===
+        t.add("[accent]视觉[]").left().padTop(10f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
-        t.add("血液颜色:").padBottom(4f).row();
-
+        t.add("血液颜色:").left().row();
         Table colors = new Table();
         colors.left();
         for(int i = 0; i < bloodColorNames.length; i++){
             int idx = i;
             Button b = colors.button(bloodColorNames[i], Styles.flatt, () -> {
-                bloodColorIndex = idx;
-                save();
-                applyBloodColor();
-                rebuildAll();
-            }).size(140f, 36f).pad(2f).left().get();
-            b.update(() -> {
-                if(bloodColorIndex == idx){
-                    b.setColor(1f, 1f, 1f, 1f);
-                }else{
-                    b.setColor(0.7f, 0.7f, 0.7f, 1f);
-                }
-            });
-            if((i + 1) % 2 == 0) colors.row();
+                bloodColorIndex = idx; save(); applyBloodColor(); rebuildAll();
+            }).size(100f, 32f).pad(2f).get();
+            b.update(() -> b.setColor(bloodColorIndex == idx ? Color.white : Color.gray));
+            if((i+1) % 4 == 0) colors.row();
         }
-        t.add(colors).padBottom(10f).row();
+        t.add(colors).left().padBottom(4f).row();
 
-        t.add("键位").fontScale(1.1f).color(Color.acid).padTop(8f).row();
+        // === 键位 ===
+        t.add("[accent]键位[]").left().padTop(10f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
         if(mobileMode){
-            t.add("手机版兼容模式下键位设置已禁用").color(Color.lightGray).padBottom(6f).row();
-            t.add("请使用右侧虚拟按键或游戏内面板").color(Color.lightGray).padBottom(10f).row();
+            t.add("  手机版兼容模式下键位设置已禁用").left().color(Color.lightGray).row();
+            t.add("  请使用游戏内虚拟按键面板").left().color(Color.lightGray).padBottom(4f).row();
         }else{
             FlameKeybinds.rebuildTable(t);
         }
-    }
 
-    static void buildRightPane(Table t){
-        t.clearChildren();
+        // === 手机版快捷操作（仅手机版兼容模式） ===
+        if(mobileMode){
+            t.add("[accent]快捷操作[]").left().padTop(10f).row();
+            t.image().fillX().height(2f).color(Color.gray).padBottom(6f).row();
 
-        t.add("终端信息").fontScale(1f).color(Color.acid).padTop(4f).row();
+            Table btns1 = new Table();
+            btns1.left();
+            btns1.button("Z - 重置", Styles.flatt, () -> simulateAction("reset")).size(120f, 36f).pad(2f);
+            btns1.button("X - 前进", Styles.flatt, () -> simulateAction("next")).size(120f, 36f).pad(2f);
+            t.add(btns1).left().row();
+
+            Table btns2 = new Table();
+            btns2.left();
+            btns2.button("V - 启动", Styles.flatt, () -> simulateAction("start")).size(120f, 36f).pad(2f);
+            btns2.button("C - 退出", Styles.flatt, () -> simulateAction("quit")).size(120f, 36f).pad(2f);
+            t.add(btns2).left().row();
+
+            Table btns3 = new Table();
+            btns3.left();
+            btns3.button("H - 贴图", Styles.flatt, () -> simulateAction("sprites")).size(120f, 36f).pad(2f);
+            Button ffBtn = new Button(Styles.flatToggleMenut){
+                { update(() -> { if(isPressed() && !disableStory && !disableStoryKeys) simulateAction("fastforward"); }); }
+            };
+            ffBtn.add("B - 快进").get().setFontScale(0.8f);
+            btns3.add(ffBtn).size(120f, 36f).pad(2f);
+            t.add(btns3).left().row();
+        }
+
+        // === 终端信息 ===
+        t.add("[accent]终端信息[]").left().padTop(10f).row();
         t.image().fillX().height(2f).color(Color.gray).padBottom(4f).row();
 
-        hudLabel = new Label("");
+        Label hudLabel = new Label("");
         hudLabel.setFontScale(0.7f);
         hudLabel.setColor(Color.lightGray);
         hudLabel.setAlignment(Align.left);
-
-        Table hudBg = new Table(Styles.none);
-        hudBg.margin(4f);
-        hudBg.defaults().pad(2f);
-        hudBg.add(hudLabel).width(240f);
-
-        t.add(hudBg).width(240f).row();
-
-        t.update(() -> {
-            if(hudLabel != null && showHudInfo){
-                hudLabel.setText(getHudInfoText());
-            }
+        Label finalHudLabel = hudLabel;
+        hudLabel.update(() -> {
+            if(showHudInfo) finalHudLabel.setText(getHudInfoText());
+            else finalHudLabel.setText("[gray](终端信息已关闭，请在上方开启)[]");
         });
-
-        if(mobileMode){
-            t.image().fillX().height(2f).color(Color.gray).padTop(8f).padBottom(4f).row();
-            t.add("快捷操作").fontScale(1f).color(Color.acid).row();
-            t.image().fillX().height(2f).color(Color.gray).padBottom(4f).row();
-
-            mobileButtons = new Table();
-            mobileButtons.left();
-            mobileButtons.defaults().pad(2f);
-
-            Button zBtn = mobileButtons.button("Z - 重置", Styles.flatt, () -> {
-                simulateAction("reset");
-            }).size(110f, 36f).get();
-
-            Button xBtn = mobileButtons.button("X - 前进", Styles.flatt, () -> {
-                simulateAction("next");
-            }).size(110f, 36f).get();
-
-            mobileButtons.row();
-
-            Button vBtn = mobileButtons.button("V - 启动", Styles.flatt, () -> {
-                simulateAction("start");
-            }).size(110f, 36f).get();
-
-            Button cBtn = mobileButtons.button("C - 退出", Styles.flatt, () -> {
-                simulateAction("quit");
-            }).size(110f, 36f).get();
-
-            mobileButtons.row();
-
-            Button hBtn = mobileButtons.button("H - 贴图", Styles.flatt, () -> {
-                simulateAction("sprites");
-            }).size(110f, 36f).get();
-
-            Button ffBtn = new Button(Styles.flatToggleMenut){
-                {
-                    update(() -> {
-                        if(isPressed() && !disableStory && !disableStoryKeys){
-                            simulateAction("fastforward");
-                        }
-                    });
-                }
-            };
-            ffBtn.add("B - 快进").get().setFontScale(0.8f);
-            mobileButtons.add(ffBtn).size(110f, 36f);
-
-            mobileButtons.row();
-            mobileButtons.row();
-
-            t.add(mobileButtons).width(240f);
-        }
+        t.add(hudLabel).left().width(400f).row();
     }
 
     static void simulateAction(String action){
         if(disableStory) return;
-
         switch(action){
-            case "reset":
-                Log.info("[FlameOut][Settings] 重置剧情");
-                SpecialMain.resetStory();
-                break;
-            case "next":
-                if(SpecialMain.getStage() < 5){
-                    SpecialMain.increment(false);
-                    Log.info("[FlameOut][Settings] 前进到阶段 " + SpecialMain.getStage());
-                }
-                break;
-            case "start":
-                Log.info("[FlameOut][Settings] 启动剧情");
-                SpecialMain.startStory();
-                break;
-            case "quit":
-                Log.info("[FlameOut][Settings] 退出剧情");
-                SpecialMain.resetStory();
-                Core.app.exit();
-                break;
-            case "sprites":
-                if(SecretSpritesMenu.dialog == null) SecretSpritesMenu.load();
-                SecretSpritesMenu.rebuild();
-                SecretSpritesMenu.dialog.show();
-                break;
-            case "fastforward":
-                SpecialMain.fastForward();
-                break;
+            case "reset" -> { Log.info("[FlameOut] 重置剧情"); SpecialMain.resetStory(); }
+            case "next" -> { if(SpecialMain.getStage() < 5){ SpecialMain.increment(false); Log.info("[FlameOut] 前进到阶段 " + SpecialMain.getStage()); } }
+            case "start" -> { Log.info("[FlameOut] 启动剧情"); SpecialMain.startStory(); }
+            case "quit" -> { Log.info("[FlameOut] 退出剧情"); SpecialMain.resetStory(); Core.app.exit(); }
+            case "sprites" -> { if(SecretSpritesMenu.dialog == null) SecretSpritesMenu.load(); SecretSpritesMenu.rebuild(); SecretSpritesMenu.dialog.show(); }
+            case "fastforward" -> SpecialMain.fastForward();
         }
     }
 
     static String getHudInfoText(){
-        StringBuilder sb = new StringBuilder();
         int stage = SpecialMain.getStage();
-        String stageName;
-        switch(stage){
-            case 0 -> stageName = "未开始";
-            case 1 -> stageName = "阶段1";
-            case 2 -> stageName = "阶段2";
-            case 3 -> stageName = "阶段3";
-            case 4 -> stageName = "阶段4";
-            case 5 -> stageName = "阶段5";
-            default -> stageName = "已完成";
-        }
-
+        String stageName = switch(stage){
+            case 0 -> "未开始"; case 1 -> "阶段1"; case 2 -> "阶段2";
+            case 3 -> "阶段3"; case 4 -> "阶段4"; case 5 -> "阶段5";
+            default -> "已完成";
+        };
+        StringBuilder sb = new StringBuilder();
         sb.append("[accent]FlameOut[]\n");
         sb.append("剧情: ").append(stageName);
-
-        if(disableStory){
-            sb.append(" [gray](已禁用)[]");
-        }else if(SpecialMain.isActive()){
-            sb.append(" [gray](运行中)[]");
-        }
-
-        sb.append("\n");
-        sb.append("虚拟按键: ").append(mobileControls ? "[green]开[]" : "[gray]关[]");
-
-        if(mobile){
-            sb.append("\n[gray](手机版)[]");
-        }
-
+        if(disableStory) sb.append(" [gray](已禁用)[]");
+        else if(SpecialMain.isActive()) sb.append(" [gray](运行中)[]");
+        sb.append("\n虚拟按键: ").append(mobileControls ? "[green]开[]" : "[gray]关[]");
+        if(mobile) sb.append("\n[gray](手机版)[]");
         return sb.toString();
     }
 }
