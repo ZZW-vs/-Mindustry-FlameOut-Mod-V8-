@@ -25,8 +25,6 @@ public class FlameHudInfo{
             infoTable = null;
         }
 
-        if(!FlameSettings.showHudInfo) return;
-
         infoTable = new Table();
         infoTable.top().left();
         infoTable.margin(8f);
@@ -41,7 +39,7 @@ public class FlameHudInfo{
         infoTable.add(bg);
 
         infoTable.update(() -> {
-            infoTable.visible = Vars.state.isGame() && FlameSettings.showHudInfo;
+            infoTable.visible = Vars.state.isGame();
         });
 
         ui.hudGroup.addChild(infoTable);
@@ -50,13 +48,8 @@ public class FlameHudInfo{
     public static void update(){
         updateTimer += Time.delta;
 
-        if(infoTable == null && FlameSettings.showHudInfo && state.isGame()){
+        if(infoTable == null && state.isGame()){
             build();
-        }
-
-        if(infoTable != null && !FlameSettings.showHudInfo){
-            infoTable.remove();
-            infoTable = null;
         }
 
         // 每30帧更新一次文本
@@ -88,13 +81,6 @@ public class FlameHudInfo{
             sb.append(" [gray](已禁用)[]");
         }else if(SpecialMain.isActive()){
             sb.append(" [gray](运行中)[]");
-        }
-
-        sb.append("\n");
-        sb.append("虚拟按键: ").append(FlameSettings.mobileControls ? "[green]开[]" : "[gray]关[]");
-
-        if(mobile){
-            sb.append("\n[gray](手机版)[]");
         }
 
         return sb.toString();

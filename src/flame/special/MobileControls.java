@@ -1,7 +1,6 @@
 package flame.special;
 
 import arc.*;
-import arc.graphics.g2d.*;
 import arc.input.*;
 import arc.scene.*;
 import arc.scene.event.*;
@@ -19,7 +18,6 @@ import static mindustry.Vars.*;
 
 public class MobileControls{
     public static Table buttonTable;
-    static Table settingsButton;
     static boolean expanded = true;
     static final float buttonSize = 44f;
     static final float pad = 4f;
@@ -27,10 +25,10 @@ public class MobileControls{
     static float posX = -1f;
     static float posY = -1f;
 
-    public static boolean enabled = true;
+    public static boolean enabled = false;
 
     public static void load(){
-        enabled = Core.settings.getBool(FlameSettings.keyMobileControls, true);
+        enabled = Core.settings.getBool(FlameSettings.keyMobileControls, false);
         posX = Core.settings.getFloat(FlameSettings.keyMobilePosX, -1f);
         posY = Core.settings.getFloat(FlameSettings.keyMobilePosY, -1f);
     }
@@ -41,18 +39,17 @@ public class MobileControls{
     }
 
     public static void build(){
+        //先清理旧的面板
         if(buttonTable != null){
             buttonTable.remove();
             buttonTable = null;
         }
 
+        //仅在启用且手机平台时创建
         if(!enabled || !mobile) return;
 
-        //使用容器实现对齐定位，避免hudGroup布局覆盖setPosition的问题
         buttonTable = new Table(Tex.buttonTrans);
         buttonTable.touchable = Touchable.enabled;
-        //设置布局对齐：右上角
-        buttonTable.top().right();
 
         rebuild();
 
@@ -61,7 +58,6 @@ public class MobileControls{
         //计算初始位置：默认右上角
         float initX, initY;
         if(posX < 0 || posY < 0){
-            //默认位置：屏幕右上角，避开顶部UI
             initX = Core.graphics.getWidth() - buttonTable.getWidth() - 10f;
             initY = Core.graphics.getHeight() - buttonTable.getHeight() - 80f;
         }else{
@@ -72,6 +68,7 @@ public class MobileControls{
         buttonTable.setPosition(initX, initY);
         clampPosition();
 
+        //拖拽监听
         buttonTable.addListener(new InputListener(){
             boolean dragging = false;
             float dragOffsetX, dragOffsetY;
@@ -81,7 +78,6 @@ public class MobileControls{
             public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
                 dragging = true;
                 moved = false;
-                //记录触摸点相对于按钮左下角的偏移
                 dragOffsetX = x;
                 dragOffsetY = y;
                 return true;
@@ -93,7 +89,6 @@ public class MobileControls{
                     if(Math.abs(x - dragOffsetX) > 2f || Math.abs(y - dragOffsetY) > 2f){
                         moved = true;
                     }
-                    //移动按钮到新位置（保持触摸点相对偏移）
                     float newX = buttonTable.x + (x - dragOffsetX);
                     float newY = buttonTable.y + (y - dragOffsetY);
                     buttonTable.setPosition(newX, newY);
@@ -117,60 +112,14 @@ public class MobileControls{
 
         ui.hudGroup.addChild(buttonTable);
 
-        //确保布局后位置正确
+        //每帧校正位置，防止 hudGroup 布局器覆盖 setPosition
         buttonTable.update(() -> {
-            //每帧检查位置是否被布局器覆盖，如果是则恢复
             if(posX >= 0 && posY >= 0){
                 if(!Mathf.equal(buttonTable.x, posX, 1f) || !Mathf.equal(buttonTable.y, posY, 1f)){
                     buttonTable.setPosition(posX, posY);
                 }
             }
         });
-
-        buildSettingsButton();
-    }
-
-    //左下角齿轮按钮：快速打开FO设置面板，剧情中也能使用
-    static void buildSettingsButton(){
-        if(settingsButton != null){
-            settingsButton.remove();
-            settingsButton = null;
-        }
-
-        settingsButton = new Table();
-        settingsButton.touchable = Touchable.enabled;
-        settingsButton.bottom().left();
-
-        settingsButton.button(Icon.settings, Styles.cleari, () -> {
-            //直接显示FO设置对话框，不依赖游戏主菜单
-            showFlameOutSettingsDialog();
-        }).size(56f).pad(4f);
-
-        //定位到屏幕左下角
-        settingsButton.pack();
-        settingsButton.setPosition(10f, 10f);
-
-        ui.hudGroup.addChild(settingsButton);
-
-        //每帧校正位置（防止hudGroup布局覆盖）
-        settingsButton.update(() -> {
-            settingsButton.visible = state.isGame() && enabled;
-            if(!Mathf.equal(settingsButton.x, 10f, 1f) || !Mathf.equal(settingsButton.y, 10f, 1f)){
-                settingsButton.setPosition(10f, 10f);
-            }
-        });
-    }
-
-    //独立的FO设置对话框，剧情中也能打开
-    static mindustry.ui.dialogs.BaseDialog flameOutSettingsDialog;
-    static void showFlameOutSettingsDialog(){
-        if(flameOutSettingsDialog == null){
-            flameOutSettingsDialog = new mindustry.ui.dialogs.BaseDialog("FlameOut 设置");
-            flameOutSettingsDialog.addCloseButton();
-            flameOutSettingsDialog.cont.margin(14f);
-            FlameSettings.buildAll(flameOutSettingsDialog.cont);
-        }
-        flameOutSettingsDialog.show();
     }
 
     static void clampPosition(){
@@ -257,7 +206,7 @@ public class MobileControls{
         buttonTable.add(content);
         buttonTable.pack();
 
-        //重新计算位置（尺寸变化后）
+        //尺寸变化后重新校正位置
         if(posX >= 0 && posY >= 0){
             buttonTable.setPosition(posX, posY);
             clampPosition();
@@ -265,7 +214,6 @@ public class MobileControls{
     }
 
     static void simulateReset(){
-        //手机版虚拟按键不检查disableStoryKeys（该标志仅为禁用键盘快捷键而设）
         if(FlameSettings.disableStory) return;
         Log.info("[FlameOut][Mobile] 重置阶段 -> 0");
         SpecialMain.state = 0;
@@ -319,6 +267,7 @@ public class MobileControls{
     }
 
     public static void update(){
+        //需要显示但尚未创建时自动创建
         if(buttonTable == null && enabled && mobile && state.isGame()){
             build();
         }
@@ -337,10 +286,6 @@ public class MobileControls{
         if(buttonTable != null){
             buttonTable.remove();
             buttonTable = null;
-        }
-        if(settingsButton != null){
-            settingsButton.remove();
-            settingsButton = null;
         }
     }
 }
