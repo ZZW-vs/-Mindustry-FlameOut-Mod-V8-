@@ -28,6 +28,7 @@ public class FlameSettings{
     public static final String keyMobilePosX = "flame-mobile-posx";
     public static final String keyMobilePosY = "flame-mobile-posy";
     public static final String keyMobileMode = "flame-mobile-mode";
+    public static final String keyAutoCleanOnDeath = "flame-auto-clean-on-death";
 
     public static boolean autoRestart = true;
     public static float restartTime = 25f;
@@ -41,6 +42,7 @@ public class FlameSettings{
     public static boolean disableStoryKeys = false;
     public static boolean mobileControls = false;
     public static boolean mobileMode = false;
+    public static boolean autoCleanOnDeath = false;
 
     static final String[] bloodColorNames = {
         "血色(原版)", "白色", "黄色", "黑色",
@@ -73,6 +75,7 @@ public class FlameSettings{
         disableStoryKeys = Core.settings.getBool(keyDisableStoryKeys, false);
         mobileControls = Core.settings.getBool(keyMobileControls, false);
         mobileMode = Core.settings.getBool(keyMobileMode, false);
+        autoCleanOnDeath = Core.settings.getBool(keyAutoCleanOnDeath, false);
         applyBloodColor();
     }
 
@@ -89,6 +92,7 @@ public class FlameSettings{
         Core.settings.put(keyDisableStoryKeys, disableStoryKeys);
         Core.settings.put(keyMobileControls, mobileControls);
         Core.settings.put(keyMobileMode, mobileMode);
+        Core.settings.put(keyAutoCleanOnDeath, autoCleanOnDeath);
     }
 
     public static void applyBloodColor(){
@@ -174,6 +178,9 @@ public class FlameSettings{
             flame.unit.empathy.EmpathyDamage.resetSpawner();
         }).size(200f, 36f).left().row();
         t.add("  清除当前共鸣生成状态").left().color(Color.lightGray).padBottom(4f).row();
+
+        t.check("单位清除器被摧毁时自动清除", autoCleanOnDeath, b -> { autoCleanOnDeath = b; save(); }).left().row();
+        t.add("  开启后单位清除器方块被打死会自动清除所有单位").left().color(Color.lightGray).padBottom(4f).row();
 
         // === 剧情 ===
         t.add("[accent]剧情[]").left().padTop(10f).row();

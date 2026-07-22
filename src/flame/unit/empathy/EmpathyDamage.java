@@ -173,6 +173,31 @@ public class EmpathyDamage{
         return units.size;
     }
 
+    /**
+     * 彻底清除所有共鸣单位，绕过 duplicate 重生机制。
+     * 先从 empathyMap/units 移除（阻止 removeEmpathy 触发 duplicate），再调用 forceRemove 真正移除。
+     */
+    public static void forceKillAllEmpathy(){
+        if(units.isEmpty()) return;
+        boolean oldActiveAdd = activeAdd;
+        activeAdd = false; // 防止移除过程中被重新添加
+
+        // 复制一份避免遍历时修改
+        Seq<EmpathyHolder> copy = new Seq<>(units);
+        for(EmpathyHolder h : copy){
+            EmpathyUnit u = h.unit;
+            if(u != null && u.isValid()){
+                // 先从 map 移除，让 removeEmpathy 找不到（不触发 duplicate）
+                empathyMap.remove(u.id);
+                u.forceRemove();
+            }
+        }
+        units.clear();
+
+        activeAdd = oldActiveAdd;
+        Log.info("[FlameOut][EmpathyDamage] forceKillAllEmpathy: 已清除 " + copy.size + " 个共鸣单位");
+    }
+
     /** 共鸣生成器是否已激活 */
     public static boolean isSpawnerActive(){
         return spawner != null && spawner.active;

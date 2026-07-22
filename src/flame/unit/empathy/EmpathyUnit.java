@@ -404,6 +404,20 @@ public class EmpathyUnit extends UnitEntity{
         return trueHealth;
     }
 
+    /**
+     * 强制移除共鸣单位，绕过 remove() 中的 trueHealth/d[ihealth] 检查和 duplicate 重生逻辑。
+     * EmpathyDamage 应在调用前先从 empathyMap/units 中移除本单位，防止 removeEmpathy 触发 duplicate。
+     */
+    public void forceRemove(){
+        for(EmpathyAI ai : attackAIs){
+            ai.stopSounds();
+        }
+        for(EmpathyAI ai : movementAIs){
+            ai.stopSounds();
+        }
+        super.remove();
+    }
+
     @Override
     public void update(){
         // 安全检查：确保 team 不为 null

@@ -21,9 +21,14 @@ import mindustry.world.meta.*;
 public class SpecialContent{
     static UnitType y;
     public static Block spawner;
+    public static UnitCleaner unitCleaner;
 
     public static void load(){
+        // 单位清除器方块（始终注册，沙盒模式可用，不受剧情状态影响）
+        unitCleaner = new UnitCleaner("unit-cleaner");
+
         if(SpecialMain.main == null) return;
+
 
         if(SpecialMain.getStage() == 2){
             spawner = new Block("unitspawn"){{
