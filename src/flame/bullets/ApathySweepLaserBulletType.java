@@ -93,7 +93,7 @@ public class ApathySweepLaserBulletType extends BulletType{
 
     @SuppressWarnings("unchecked")
     void scanCone(Bullet b, float rot, float dst){
-        for(TeamData data : Vars.state.teams.active){
+        for(TeamData data : Vars.state.teams.present){
             if(data.team != b.team && data.unitTree != null){
                 Utils.scanCone(data.unitTree, b.x, b.y, rot, length, dst / 2, u -> {
                     if((u.isFlying() || u instanceof TimedKillUnit) && !set.contains(u.id)){
@@ -127,7 +127,7 @@ public class ApathySweepLaserBulletType extends BulletType{
     void laser(Bullet b, float rotation, float speed){
         float mwidth = Mathf.curve(b.fin(), 0f, 0.05f) * Mathf.curve(b.fout(), 0, 0.15f) * width * speed;
         Vec2 v = Utils.v.trns(rotation, length - mwidth / 2).add(b);
-        for(TeamData data : Vars.state.teams.active){
+        for(TeamData data : Vars.state.teams.present){
             if(data.team != b.team && data.unitTree != null){
                 Utils.intersectLine(data.unitTree, mwidth, b.x, b.y, v.x, v.y, (u, x, y) -> {
                     if((u.isFlying() || u instanceof TimedKillUnit) && !set.contains(u.id)){

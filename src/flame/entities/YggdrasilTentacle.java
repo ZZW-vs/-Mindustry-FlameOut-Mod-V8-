@@ -126,7 +126,7 @@ public class YggdrasilTentacle{
                 }
             }
         });
-        for(TeamData data : Vars.state.teams.active){
+        for(TeamData data : Vars.state.teams.present){
             if(data.team != unit.team && data.buildingTree != null){
                 tseq.clear();
                 data.buildingTree.intersect(r, tseq);

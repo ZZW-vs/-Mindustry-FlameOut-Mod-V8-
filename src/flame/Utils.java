@@ -318,7 +318,7 @@ public class Utils{
 
         if(targetGround){
             buildings.clear();
-            for(TeamData data : Vars.state.teams.active){
+            for(TeamData data : Vars.state.teams.present){
                 if(data.team != team && data.buildingTree != null){
                     data.buildingTree.intersect(r, b -> {
                         if(Mathf.within(x, y, b.x, b.y, radius + b.hitSize() / 2f)){

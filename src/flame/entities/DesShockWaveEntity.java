@@ -39,7 +39,7 @@ public class DesShockWaveEntity extends DrawEntity{
         time += Time.delta / 120f;
         float crange = getRange();
 
-        for(TeamData data : Vars.state.teams.active){
+        for(TeamData data : Vars.state.teams.present){
             if(data.team != team){
                 QuadTreeHandler handler = (rect, tree) -> {
                     if(tree){

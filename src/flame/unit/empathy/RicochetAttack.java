@@ -303,8 +303,9 @@ public class RicochetAttack extends AttackAI{
         void handleBullets(Healthc h, float x, float y){
             for(BulletData b : bullets){
                 BulletType type = b.type;
+                if(type == null) continue;
                 Bullet tb = tmpBullet;
-                tb.type = b.type;
+                tb.type = type;
                 tb.data = b.data;
                 tb.team = team;
                 tb.time = 0f;
@@ -312,7 +313,7 @@ public class RicochetAttack extends AttackAI{
                 tb.y = y;
                 tb.aimX = x;
                 tb.aimY = y;
-                tb.hitSize = b.type.hitSize;
+                tb.hitSize = type.hitSize;
 
                 try{
                     type.hitEntity(tb, (Hitboxc)h, h.health());

@@ -461,6 +461,11 @@ public class EmpathyDamage{
     }
 
     static void annihilate(Entityc entity, boolean setNaN){
+        //v159: during Groups.clear(), EntityGroup.remove() is a no-op (clearing flag).
+        //If we queueFree() anyway, the entity gets reset (type=null) while still in the group,
+        //causing NPE on next update(). Skip queueFree during clearing.
+        if(Groups.isClearing) return;
+
         Groups.all.remove(entity);
         if(entity instanceof Drawc d) Groups.draw.remove(d);
         if(entity instanceof Syncc s) Groups.sync.remove(s);

@@ -678,7 +678,7 @@ public class ApathyIAI implements UnitController{
             //st = null;
             //sts = 0f;
 
-            for(TeamData td : Vars.state.teams.active){
+            for(TeamData td : Vars.state.teams.present){
                 if(td.team != unit.team){
                     for(Unit u : td.units){
                         if(u.dead) continue;
