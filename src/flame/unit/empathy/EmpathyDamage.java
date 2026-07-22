@@ -269,10 +269,13 @@ public class EmpathyDamage{
             int dsize = Groups.draw.size();
             for(int i = (staggerIdx % 3); i < dsize; i += 3){
                 Drawc d = Groups.draw.index(i);
-                //v159: Skip Bullet entities - they are pooled and have their own lifecycle.
-                //Re-adding a Bullet that was removed() but not yet reset() (type=null) to Groups.all
-                //would leave a type=null Bullet in the group, causing NPE in update().
-                if(d instanceof Bullet) continue;
+                //v159: Only re-add EmpathyUnit instances that lost Groups.all membership.
+                //Previously this scanned ALL Drawc entities, but calling Groups.all.add(d)
+                //without d.add() leaves BasicEntity.added=false, so the entity's remove()
+                //early-returns (if(!added) return) and it can never be cleaned up.
+                //This caused particle effects (BloodSplatter, Devastation, etc.) to accumulate.
+                //Non-EmpathyUnit entities have their own lifecycle management and must not be touched here.
+                if(!(d instanceof EmpathyUnit)) continue;
                 if(!addedSet.contains(d.id())){
                     Groups.all.add(d);
                 }

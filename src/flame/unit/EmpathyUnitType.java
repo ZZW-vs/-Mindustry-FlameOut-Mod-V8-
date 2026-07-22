@@ -13,8 +13,7 @@ public class EmpathyUnitType extends UnitType{
         super(name);
         flying = true;
         hitSize = 7;
-        speed = 5f;
-        drag = 0.02f;
+        drag = 0.07f;
 
         health = 100f;
 
