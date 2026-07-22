@@ -19,6 +19,7 @@ import static mindustry.Vars.*;
 
 public class MobileControls{
     public static Table buttonTable;
+    static Table settingsButton;
     static boolean expanded = true;
     static final float buttonSize = 44f;
     static final float pad = 4f;
@@ -125,6 +126,51 @@ public class MobileControls{
                 }
             }
         });
+
+        buildSettingsButton();
+    }
+
+    //左下角齿轮按钮：快速打开FO设置面板，剧情中也能使用
+    static void buildSettingsButton(){
+        if(settingsButton != null){
+            settingsButton.remove();
+            settingsButton = null;
+        }
+
+        settingsButton = new Table();
+        settingsButton.touchable = Touchable.enabled;
+        settingsButton.bottom().left();
+
+        settingsButton.button(Icon.settings, Styles.cleari, () -> {
+            //直接显示FO设置对话框，不依赖游戏主菜单
+            showFlameOutSettingsDialog();
+        }).size(56f).pad(4f);
+
+        //定位到屏幕左下角
+        settingsButton.pack();
+        settingsButton.setPosition(10f, 10f);
+
+        ui.hudGroup.addChild(settingsButton);
+
+        //每帧校正位置（防止hudGroup布局覆盖）
+        settingsButton.update(() -> {
+            settingsButton.visible = state.isGame() && enabled;
+            if(!Mathf.equal(settingsButton.x, 10f, 1f) || !Mathf.equal(settingsButton.y, 10f, 1f)){
+                settingsButton.setPosition(10f, 10f);
+            }
+        });
+    }
+
+    //独立的FO设置对话框，剧情中也能打开
+    static mindustry.ui.dialogs.BaseDialog flameOutSettingsDialog;
+    static void showFlameOutSettingsDialog(){
+        if(flameOutSettingsDialog == null){
+            flameOutSettingsDialog = new mindustry.ui.dialogs.BaseDialog("FlameOut 设置");
+            flameOutSettingsDialog.addCloseButton();
+            flameOutSettingsDialog.cont.margin(14f);
+            FlameSettings.buildAll(flameOutSettingsDialog.cont);
+        }
+        flameOutSettingsDialog.show();
     }
 
     static void clampPosition(){
@@ -186,7 +232,7 @@ public class MobileControls{
                 Button ffBtn = new Button(Styles.flatToggleMenut){
                     {
                         update(() -> {
-                            if(isPressed() && !FlameSettings.disableStory && !FlameSettings.disableStoryKeys){
+                            if(isPressed() && !FlameSettings.disableStory){
                                 simulateFastForward();
                             }
                         });
@@ -219,7 +265,8 @@ public class MobileControls{
     }
 
     static void simulateReset(){
-        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory) return;
+        //手机版虚拟按键不检查disableStoryKeys（该标志仅为禁用键盘快捷键而设）
+        if(FlameSettings.disableStory) return;
         Log.info("[FlameOut][Mobile] 重置阶段 -> 0");
         SpecialMain.state = 0;
         Core.settings.put("flame-special", 0);
@@ -227,7 +274,7 @@ public class MobileControls{
     }
 
     static void simulateNext(){
-        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory) return;
+        if(FlameSettings.disableStory) return;
         if(SpecialMain.state < 5){
             SpecialMain.increment(false);
             Log.info("[FlameOut][Mobile] 前进到下一阶段 -> " + SpecialMain.state);
@@ -235,7 +282,7 @@ public class MobileControls{
     }
 
     static void simulateStart(){
-        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory) return;
+        if(FlameSettings.disableStory) return;
         Log.info("[FlameOut][Mobile] 启动剧情");
         if(SpecialMain.state == 0){
             SpecialMain.state = 1;
@@ -251,7 +298,7 @@ public class MobileControls{
     }
 
     static void simulateQuit(){
-        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory) return;
+        if(FlameSettings.disableStory) return;
         Log.info("[FlameOut][Mobile] 退出剧情");
         SpecialMain.state = 0;
         Core.settings.put("flame-special", 0);
@@ -260,7 +307,7 @@ public class MobileControls{
     }
 
     static void simulateFastForward(){
-        if(FlameSettings.disableStoryKeys || FlameSettings.disableStory) return;
+        if(FlameSettings.disableStory) return;
         if(SpecialMain.activeState != null){
             try{
                 java.lang.reflect.Field f = SpecialMain.activeState.getClass().getDeclaredField("time");
@@ -290,6 +337,10 @@ public class MobileControls{
         if(buttonTable != null){
             buttonTable.remove();
             buttonTable = null;
+        }
+        if(settingsButton != null){
+            settingsButton.remove();
+            settingsButton = null;
         }
     }
 }
