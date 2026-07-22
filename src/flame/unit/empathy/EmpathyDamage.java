@@ -189,6 +189,10 @@ public class EmpathyDamage{
     }
 
     public static void update(){
+        //v159: Skip update entirely during group clearing (e.g. game exit) to avoid
+        //operating on entities that are being reset (type=null etc.)
+        if(Groups.isClearing) return;
+
         if(spawner != null && (spawner.active || spawner.reactivateTime > 0f)){
             spawner.update();
         }
@@ -265,6 +269,10 @@ public class EmpathyDamage{
             int dsize = Groups.draw.size();
             for(int i = (staggerIdx % 3); i < dsize; i += 3){
                 Drawc d = Groups.draw.index(i);
+                //v159: Skip Bullet entities - they are pooled and have their own lifecycle.
+                //Re-adding a Bullet that was removed() but not yet reset() (type=null) to Groups.all
+                //would leave a type=null Bullet in the group, causing NPE in update().
+                if(d instanceof Bullet) continue;
                 if(!addedSet.contains(d.id())){
                     Groups.all.add(d);
                 }
