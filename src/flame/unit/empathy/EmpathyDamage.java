@@ -168,6 +168,22 @@ public class EmpathyDamage{
         }
     }
 
+    /** 当前存活的共鸣单位数量 */
+    public static int getEmpathyCount(){
+        return units.size;
+    }
+
+    /** 共鸣生成器是否已激活 */
+    public static boolean isSpawnerActive(){
+        return spawner != null && spawner.active;
+    }
+
+    /** 共鸣生成器倒计时（秒），未激活返回 -1 */
+    public static float getSpawnerCountdown(){
+        if(spawner == null || !spawner.active) return -1f;
+        return spawner.countDown;
+    }
+
     public static void draw(){
         if(spawner != null){
             if(spawner.active){

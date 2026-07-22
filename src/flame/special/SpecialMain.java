@@ -158,6 +158,18 @@ public class SpecialMain{
         return activeState != null;
     }
 
+    /** 当前剧情已运行时间（tick），无活跃剧情返回 -1 */
+    public static float getStoryTime(){
+        if(activeState == null) return -1f;
+        try{
+            java.lang.reflect.Field f = activeState.getClass().getDeclaredField("time");
+            f.setAccessible(true);
+            return (float)f.get(activeState);
+        }catch(Exception e){
+            return -1f;
+        }
+    }
+
     public static void resetStory(){
         state = 0;
         Core.settings.put("flame-special", 0);

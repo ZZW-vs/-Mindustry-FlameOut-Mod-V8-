@@ -61,12 +61,35 @@ tasks.register('jarAndroid'){
         def buildToolsDir = new File("$sdkRoot/build-tools/").listFiles().sort().reverse().find{ f -> f.isDirectory() && new File(f, isWindows ? "d8.bat" : "d8").exists()}
         if(!buildToolsDir) throw new GradleException("No build-tools with d8 found. Ensure that you have Android build-tools installed.")
 
-        def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
-
         def d8 = new File(buildToolsDir, isWindows ? "d8.bat" : "d8").path
+        def inputJar = new File("build/libs/flameout.jar").absolutePath
+        def outputJar = new File("build/libs/flameoutAndroid.jar").absolutePath
 
-        "$d8 $dependencies --min-api 14 --output flameoutAndroid.jar flameout.jar"
-                .execute(null, new File("build/libs")).waitForProcessOutput(System.out, System.err)
+        //构建classpath参数列表，每个路径单独传入避免空格问题
+        def classpathArgs = []
+        (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).each{
+            classpathArgs.add("--classpath")
+            classpathArgs.add(it.absolutePath)
+        }
+
+        //使用exec避免字符串拼接中的空格问题
+        exec{
+            workingDir new File("build/libs")
+            executable d8
+            args classpathArgs
+            args "--min-api", "14"
+            args "--output", "flameoutAndroid.jar"
+            args "flameout.jar"
+            //打印执行命令便于调试
+            println "d8 command: ${d8} ${classpathArgs.join(' ')} --min-api 14 --output flameoutAndroid.jar flameout.jar"
+        }
+
+        //验证输出文件存在
+        def outputFile = new File("build/libs/flameoutAndroid.jar")
+        if(!outputFile.exists() || outputFile.length() < 1000){
+            throw new GradleException("d8 failed to produce valid output jar: $outputFile (size=${outputFile.exists() ? outputFile.length() : 0})")
+        }
+        println "d8 success: flameoutAndroid.jar size=${outputFile.length()}"
     }
 }
 
@@ -98,16 +121,39 @@ tasks.register('deploy', Jar){
         def androidJar = file("build/libs/flameoutAndroid.jar")
         if(!desktopJar.exists()) throw new GradleException("Desktop jar not found: $desktopJar")
         if(!androidJar.exists()) throw new GradleException("Android jar not found: $androidJar")
+        println "Deploy: merging desktop jar (${desktopJar.length()} bytes) and android jar (${androidJar.length()} bytes)"
     }
 
     from{ [zipTree(file("build/libs/flameout.jar")), zipTree(file("build/libs/flameoutAndroid.jar"))] }
 
+    //确保DEX文件不被压缩处理，保持原始格式
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+
     doLast{
+        //验证合并后的jar包含classes.dex
+        def mergedJar = file("build/deploy-output/flameout.jar")
+        if(!mergedJar.exists()) throw new GradleException("Merged jar not found: $mergedJar")
+
+        //检查是否包含classes.dex
+        def hasDex = false
+        zipTree(mergedJar).visit { f ->
+            if(f.name == "classes.dex" || f.name.startsWith("classes") && f.name.endsWith(".dex")){
+                hasDex = true
+                println "Deploy: found DEX file: ${f.name} (${f.size} bytes)"
+            }
+        }
+        if(!hasDex){
+            throw new GradleException("Deploy: merged jar does not contain classes.dex! Android will not be able to load classes.")
+        }
+        println "Deploy: merged jar size=${mergedJar.length()}, contains DEX"
+
         delete file("build/libs/flameoutAndroid.jar")
         copy{
             from file("build/deploy-output/flameout.jar")
             into file("build/libs/")
         }
         delete file("build/deploy-output")
+        println "Deploy: final jar at build/libs/flameout.jar (${file('build/libs/flameout.jar').length()} bytes)"
     }
 }

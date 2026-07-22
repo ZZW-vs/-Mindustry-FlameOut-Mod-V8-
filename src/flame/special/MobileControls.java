@@ -45,8 +45,8 @@ public class MobileControls{
             buttonTable = null;
         }
 
-        //仅在启用且手机平台时创建
-        if(!enabled || !mobile) return;
+        //仅在启用时创建（不限制平台，桌面版也可用于测试）
+        if(!enabled) return;
 
         buttonTable = new Table(Tex.buttonTrans);
         buttonTable.touchable = Touchable.enabled;
@@ -55,11 +55,13 @@ public class MobileControls{
 
         buttonTable.pack();
 
-        //计算初始位置：默认右上角
+        //计算初始位置：默认右上角（使用 scene 逻辑尺寸适配不同显示器）
         float initX, initY;
+        float sw = sceneWidth();
+        float sh = sceneHeight();
         if(posX < 0 || posY < 0){
-            initX = Core.graphics.getWidth() - buttonTable.getWidth() - 10f;
-            initY = Core.graphics.getHeight() - buttonTable.getHeight() - 80f;
+            initX = sw - buttonTable.getWidth() - 10f;
+            initY = sh - buttonTable.getHeight() - 80f;
         }else{
             initX = posX;
             initY = posY;
@@ -127,15 +129,27 @@ public class MobileControls{
         float y = buttonTable.y;
         float w = buttonTable.getWidth();
         float h = buttonTable.getHeight();
-        float sw = Core.graphics.getWidth();
-        float sh = Core.graphics.getHeight();
+        float sw = sceneWidth();
+        float sh = sceneHeight();
 
         if(x < 0f) x = 0f;
         if(y < 0f) y = 0f;
         if(x + w > sw) x = sw - w;
         if(y + h > sh) y = sh - h;
+        if(x < 0f) x = 0f;
+        if(y < 0f) y = 0f;
 
         buttonTable.setPosition(x, y);
+    }
+
+    /** scene 逻辑宽度（适配不同分辨率/显示器，hudGroup.setFillParent 后子元素坐标基于此） */
+    static float sceneWidth(){
+        return Core.scene != null ? Core.scene.getWidth() : Core.graphics.getWidth();
+    }
+
+    /** scene 逻辑高度 */
+    static float sceneHeight(){
+        return Core.scene != null ? Core.scene.getHeight() : Core.graphics.getHeight();
     }
 
     static void rebuild(){
@@ -267,8 +281,8 @@ public class MobileControls{
     }
 
     public static void update(){
-        //需要显示但尚未创建时自动创建
-        if(buttonTable == null && enabled && mobile && state.isGame()){
+        //需要显示但尚未创建时自动创建（不限制平台）
+        if(buttonTable == null && enabled && state.isGame()){
             build();
         }
         if(buttonTable != null){
