@@ -529,13 +529,21 @@ public class EmpathyDamage{
         if(entity instanceof Bullet bullet){
             Groups.bullet.remove(bullet);
 
+            //v159: set type to placeholder before any pool free, so even if the bullet
+            //remains in the group due to a timing issue, update() won't NPE on type.accel
+            bullet.type = Bullets.placeholder;
+
             try{
                 ReflectUtils.findField(bullet.getClass(), "added").setBoolean(bullet, false);
             }catch(Exception e){
                 Log.err(e);
             }
         }
-        if(entity instanceof Pool.Poolable p) Groups.queueFree(p);
+        //v159: Do NOT call Groups.queueFree(p) here.
+        //queueFree() -> Pools.free() -> reset() sets type=null. If the entity is still in
+        //a group (e.g., Groups.bullet.clearing was true but Groups.isClearing was false,
+        //so remove() was a no-op), the next update() will NPE on type.accel.
+        //The entity is already removed from all groups above; let GC handle it instead.
     }
 
     static void handleAdditions(int start, Entityc exclude, Entityc exclude2, Seq<Building> proxy){
