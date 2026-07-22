@@ -9,6 +9,7 @@ import arc.scene.style.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
+import arc.math.*;
 import flame.*;
 import mindustry.*;
 import mindustry.gen.*;
@@ -19,8 +20,8 @@ import static mindustry.Vars.*;
 public class MobileControls{
     public static Table buttonTable;
     static boolean expanded = true;
-    static final float buttonSize = 48f;
-    static final float pad = 6f;
+    static final float buttonSize = 44f;
+    static final float pad = 4f;
 
     static float posX = -1f;
     static float posY = -1f;
@@ -46,19 +47,29 @@ public class MobileControls{
 
         if(!enabled || !mobile) return;
 
+        //使用容器实现对齐定位，避免hudGroup布局覆盖setPosition的问题
         buttonTable = new Table(Tex.buttonTrans);
         buttonTable.touchable = Touchable.enabled;
+        //设置布局对齐：右上角
+        buttonTable.top().right();
 
         rebuild();
 
+        buttonTable.pack();
+
+        //计算初始位置：默认右上角
+        float initX, initY;
         if(posX < 0 || posY < 0){
-            buttonTable.setPosition(
-                Core.graphics.getWidth() - buttonTable.getWidth() - 10f,
-                Core.graphics.getHeight() - buttonTable.getHeight() - 120f
-            );
+            //默认位置：屏幕右上角，避开顶部UI
+            initX = Core.graphics.getWidth() - buttonTable.getWidth() - 10f;
+            initY = Core.graphics.getHeight() - buttonTable.getHeight() - 80f;
         }else{
-            buttonTable.setPosition(posX, posY);
+            initX = posX;
+            initY = posY;
         }
+
+        buttonTable.setPosition(initX, initY);
+        clampPosition();
 
         buttonTable.addListener(new InputListener(){
             boolean dragging = false;
@@ -69,6 +80,7 @@ public class MobileControls{
             public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
                 dragging = true;
                 moved = false;
+                //记录触摸点相对于按钮左下角的偏移
                 dragOffsetX = x;
                 dragOffsetY = y;
                 return true;
@@ -80,7 +92,10 @@ public class MobileControls{
                     if(Math.abs(x - dragOffsetX) > 2f || Math.abs(y - dragOffsetY) > 2f){
                         moved = true;
                     }
-                    buttonTable.moveBy(x - dragOffsetX, y - dragOffsetY);
+                    //移动按钮到新位置（保持触摸点相对偏移）
+                    float newX = buttonTable.x + (x - dragOffsetX);
+                    float newY = buttonTable.y + (y - dragOffsetY);
+                    buttonTable.setPosition(newX, newY);
                     clampPosition();
                 }
             }
@@ -100,6 +115,16 @@ public class MobileControls{
         });
 
         ui.hudGroup.addChild(buttonTable);
+
+        //确保布局后位置正确
+        buttonTable.update(() -> {
+            //每帧检查位置是否被布局器覆盖，如果是则恢复
+            if(posX >= 0 && posY >= 0){
+                if(!Mathf.equal(buttonTable.x, posX, 1f) || !Mathf.equal(buttonTable.y, posY, 1f)){
+                    buttonTable.setPosition(posX, posY);
+                }
+            }
+        });
     }
 
     static void clampPosition(){
@@ -127,67 +152,70 @@ public class MobileControls{
         content.top().left();
 
         if(expanded){
-            Button btn1 = content.button(Icon.settings, Styles.cleari, () -> {
+            //第1行：设置 + 贴图菜单
+            content.button(Icon.settings, Styles.cleari, () -> {
                 FlameSettings.showSettings();
-            }).size(buttonSize).pad(2f).get();
+            }).size(buttonSize).pad(2f);
 
-            Button btn2 = content.button(Icon.tree, Styles.cleari, () -> {
+            content.button(Icon.tree, Styles.cleari, () -> {
                 if(SecretSpritesMenu.dialog == null) SecretSpritesMenu.load();
                 SecretSpritesMenu.rebuild();
                 SecretSpritesMenu.dialog.show();
-            }).size(buttonSize).pad(2f).get();
+            }).size(buttonSize).pad(2f);
 
             content.row();
 
-            Button btnZ = new Button(Styles.flatt);
-            btnZ.add("Z").get().setFontScale(0.9f);
-            btnZ.clicked(() -> simulateReset());
-            content.add(btnZ).size(buttonSize).pad(2f);
-
-            Button btnX = new Button(Styles.flatt);
-            btnX.add("X").get().setFontScale(0.9f);
-            btnX.clicked(() -> simulateNext());
-            content.add(btnX).size(buttonSize).pad(2f);
+            //第2行：Z(重置) + X(前进)
+            content.table(t -> {
+                t.button("Z", Styles.flatt, () -> simulateReset()).size(buttonSize).pad(2f);
+                t.button("X", Styles.flatt, () -> simulateNext()).size(buttonSize).pad(2f);
+            });
 
             content.row();
 
-            Button btnV = new Button(Styles.flatt);
-            btnV.add("V").get().setFontScale(0.9f);
-            btnV.clicked(() -> simulateStart());
-            content.add(btnV).size(buttonSize).pad(2f);
-
-            Button btnC = new Button(Styles.flatt);
-            btnC.add("C").get().setFontScale(0.9f);
-            btnC.clicked(() -> simulateQuit());
-            content.add(btnC).size(buttonSize).pad(2f);
+            //第3行：V(启动) + C(退出)
+            content.table(t -> {
+                t.button("V", Styles.flatt, () -> simulateStart()).size(buttonSize).pad(2f);
+                t.button("C", Styles.flatt, () -> simulateQuit()).size(buttonSize).pad(2f);
+            });
 
             content.row();
 
-            Button ffBtn = new Button(Styles.flatToggleMenut){
-                {
-                    update(() -> {
-                        if(isPressed() && !FlameSettings.disableStory && !FlameSettings.disableStoryKeys){
-                            simulateFastForward();
-                        }
-                    });
-                }
-            };
-            ffBtn.add("B").get().setFontScale(0.8f);
-            content.add(ffBtn).size(buttonSize).pad(2f);
+            //第4行：B(快进) + 收起按钮
+            content.table(t -> {
+                Button ffBtn = new Button(Styles.flatToggleMenut){
+                    {
+                        update(() -> {
+                            if(isPressed() && !FlameSettings.disableStory && !FlameSettings.disableStoryKeys){
+                                simulateFastForward();
+                            }
+                        });
+                    }
+                };
+                ffBtn.add("B").get().setFontScale(0.8f);
+                t.add(ffBtn).size(buttonSize).pad(2f);
 
-            Button btnHide = content.button(Icon.right, Styles.cleari, () -> {
-                expanded = false;
-                rebuild();
-            }).size(buttonSize).pad(2f).get();
+                t.button(Icon.right, Styles.cleari, () -> {
+                    expanded = false;
+                    rebuild();
+                }).size(buttonSize).pad(2f);
+            });
         }else{
-            Button btnShow = content.button(Icon.left, Styles.cleari, () -> {
+            //收起状态：只显示展开按钮
+            content.button(Icon.left, Styles.cleari, () -> {
                 expanded = true;
                 rebuild();
-            }).size(buttonSize).pad(2f).get();
+            }).size(buttonSize).pad(2f);
         }
 
         buttonTable.add(content);
         buttonTable.pack();
+
+        //重新计算位置（尺寸变化后）
+        if(posX >= 0 && posY >= 0){
+            buttonTable.setPosition(posX, posY);
+            clampPosition();
+        }
     }
 
     static void simulateReset(){
