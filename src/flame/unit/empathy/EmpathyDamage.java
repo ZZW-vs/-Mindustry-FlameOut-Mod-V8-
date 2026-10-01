@@ -280,12 +280,19 @@ public class EmpathyDamage{
 
             if(!excludeReAdd.isEmpty()){
                 for(Unit u : excludeReAdd){
-                    if(u.isAdded()){
-                        Groups.all.add(u);
+                    //v160: Groups.all 的 GroupDef 显式排除了 Unitc（见 GroupDefs），
+                    //所以豁免单位在 Groups.all 里永远扫不到，上面的 excludeReAdd.remove 全部失效。
+                    //这里必须改用“是否还在 Groups.unit 里”来判断，否则每 15 tick 都会把同一个单位
+                    //重复 add 进 Groups.unit/Groups.draw，导致同一实体在组里出现多份。
+                    //多份会让 EntityCollisions.updatePhysics() 对同一对象连续调用多次
+                    //updateLastPosition()，第二次起 deltaX/deltaY 恒被清零，LegsComp 的
+                    //totalLength 不再推进，腿就不再迈步（表现为“腿被拖在后面”）。
+                    boolean inUnitGroup = Groups.unit.contains(e -> e == u);
+                    if(!u.isAdded()){
+                        u.add();
+                    }else if(!inUnitGroup){
                         Groups.unit.add(u);
                         Groups.draw.add(u);
-                    }else{
-                        u.add();
                     }
                 }
             }
@@ -749,7 +756,10 @@ public class EmpathyDamage{
             int ac = getAddCount();
             boolean setNaN = ac >= 3;
             if(ac <= 0){
-                Entityc lastEntity = Groups.all.index(Groups.all.size() - 1);
+                //Groups.all 可能为空（例如场景里还没有任何建筑/特效），
+                //此时 size - 1 == -1 会让 index() 抛 ArrayIndexOutOfBoundsException。
+                boolean hadAll = Groups.all.size() > 0;
+                Entityc lastEntity = hadAll ? Groups.all.index(Groups.all.size() - 1) : null;
                 int idx = Groups.all.size();
                 boolean wasAdded = entity.isAdded();
                 entity.remove();
@@ -761,11 +771,11 @@ public class EmpathyDamage{
                 if(!entity.isAdded() && wasAdded){
                     idx--;
                 }
-                Entityc newEntity = Groups.all.index(Groups.all.size() - 1);
+                Entityc newEntity = Groups.all.size() > 0 ? Groups.all.index(Groups.all.size() - 1) : null;
                 int newCount = Groups.all.size();
 
                 //TODO fix
-                if(newCount > idx && lastEntity != newEntity){
+                if(hadAll && newCount > idx && lastEntity != newEntity){
                     handleAdditions(idx, entity, lastEntity, (entity instanceof Building bu) ? bu.proximity : null);
                 }
                 if(reAdded()){
