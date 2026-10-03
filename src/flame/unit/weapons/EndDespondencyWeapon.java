@@ -182,9 +182,17 @@ public class EndDespondencyWeapon extends Weapon{
     public void update(Unit unit, WeaponMount mount){
         DespondencyMount m = (DespondencyMount)mount;
 
+        //玩家操控该单位时，用单位上的 playerUltimate 标志代替原版 AI 的 death 状态
+        DespondencyUnit dUnit = unit instanceof DespondencyUnit d ? d : null;
+        boolean playerDriven = dUnit != null && dUnit.playerUltimate;
+
         //boolean shoot = (mount.shoot || m.active) && unit.controller() instanceof DespondencyAI && ((mount.target instanceof Unit uu && uu.isValid()) || m.stage > 2);
-        boolean shoot = (mount.shoot || m.active) && unit.controller() instanceof DespondencyAI && (mount.target instanceof Unit uu && uu.isValid() || m.targetDestroyed);
+        boolean shoot = ((mount.shoot || m.active) && unit.controller() instanceof DespondencyAI && (mount.target instanceof Unit uu && uu.isValid() || m.targetDestroyed))
+                || (playerDriven && (mount.target instanceof Unit uu && uu.isValid() || m.targetDestroyed));
         if(shoot){
+            //玩家操控时，需要在这里补上 AI 原来对 activeTime 的累加
+            if(playerDriven) m.activeTime += Time.delta;
+
             m.time += Time.delta;
             for(DespondencyArm arm : arms){
                 if(m.time >= arm.delay){
@@ -230,6 +238,7 @@ public class EndDespondencyWeapon extends Weapon{
                             endFinal(m);
 
                             if(unit.controller() instanceof DespondencyAI ai) ai.endDeath();
+                            if(dUnit != null && dUnit.playerUltimate) dUnit.endPlayerUltimate(true);
                             //Log.info("des s4");
                             mount.target = null;
                             return;
@@ -243,6 +252,7 @@ public class EndDespondencyWeapon extends Weapon{
             if(m.stage > 2){
                 endFinal(m);
                 if(unit.controller() instanceof DespondencyAI ai) ai.endDeathFailed();
+                if(dUnit != null && dUnit.playerUltimate) dUnit.endPlayerUltimate(false);
             }
             m.time = 0f;
             for(int i = 0; i < m.times.length; i++){

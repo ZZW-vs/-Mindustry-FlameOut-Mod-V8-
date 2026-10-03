@@ -12,6 +12,7 @@ import flame.entities.*;
 import flame.graphics.*;
 import mindustry.*;
 import mindustry.ai.types.*;
+import mindustry.entities.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.units.*;
 import mindustry.game.*;
@@ -47,6 +48,18 @@ public class EmpathyUnit extends UnitEntity{
     private float stunTimer2 = 0f;
     int stunCount = 0;
     boolean initialized;
+
+    // ==== 玩家操控时的技能层状态 ====
+    /** 玩家触发的攻击技能是否正在执行。 */
+    private boolean playerAttackActive = false;
+    /** 记录触发时的 attackAIChanges，用于判断攻击技能是否已结束。 */
+    private int playerAttackMark = 0;
+    /** 玩家瞬移演出是否正在执行。 */
+    private boolean playerTeleporting = false;
+    /** 玩家模式下目标刷新计时。 */
+    private float playerRetargetTime = 0f;
+    /** 上一帧技能键的按住状态（用于"刚按下"边沿检测）。 */
+    private boolean prevAttackHeld = false, prevMoveHeld = false;
 
     private float moveDistances = 0f;
 
@@ -150,7 +163,10 @@ public class EmpathyUnit extends UnitEntity{
 
             @Override
             protected void updateTrueValues(){
-                if(d[istunTimer] <= 0f){
+                // 玩家是否正在操控本单位
+                boolean playerControlled = isPlayer();
+
+                if(!playerControlled && d[istunTimer] <= 0f){
                     d[ix] += trueVel.x * Time.delta;
                     d[iy] += trueVel.y * Time.delta;
                 }
@@ -161,6 +177,23 @@ public class EmpathyUnit extends UnitEntity{
                 float hd = d[ihealth] - health;
                 if(hd > 0){
                     updateDamageTaken(hd);
+                }
+
+                if(playerControlled){
+                    // 玩家操控时：把实际状态同步进逻辑值，不再强制覆盖控制器与位置。
+                    // 这样松开控制后单位不会瞬移回生成点。
+                    d[ihealth] = health;
+                    d[imaxHealth] = maxHealth;
+                    tm[0] = team;
+                    d[ix] = x;
+                    d[iy] = y;
+                    d[ir] = rotation;
+                    hitSize = 10f;
+                    if(d[ihealth] > 0){
+                        dead = false;
+                        elevation = 1;
+                    }
+                    return;
                 }
 
                 health = d[ihealth];
@@ -562,10 +595,16 @@ public class EmpathyUnit extends UnitEntity{
         }
 
         if(stunTimer <= 0f){
-            // 只有不是玩家控制时，才更新 AI
+            // 只有不是玩家控制时，才更新原版 AI
             if(!isPlayer()){
+                playerAttackActive = false;
+                playerTeleporting = false;
+                prevAttackHeld = prevMoveHeld = false;
                 if(activeAttack.updateMovementAI() || !activeMovement.updateAttackAI()) activeMovement.update();
                 if(activeMovement.updateAttackAI() && chainTime <= 0f) activeAttack.update();
+            }else{
+                // 玩家操控时运行技能层（随机攻击 + 瞬移）
+                updatePlayerSkills();
             }
         }
         
@@ -651,6 +690,78 @@ public class EmpathyUnit extends UnitEntity{
         activeMovement.retarget();
     }
 
+    /**
+     * 玩家操控时的技能层：复刻原版 AI 的行为，让玩家也能释放技能。
+     * <ul>
+     *     <li>技能键：随机切换一个攻击 AI 并执行，直至该攻击自然结束。</li>
+     *     <li>瞬移键：切换到 RandomTeleport 并播放一次瞬移。</li>
+     * </ul>
+     */
+    void updatePlayerSkills(){
+        //周期性刷新最强目标（只扫描，不做移动）
+        playerRetargetTime -= Time.delta;
+        if(playerRetargetTime <= 0f){
+            playerRetargetTime = 30f;
+            if(activeMovement != null) activeMovement.retarget();
+        }
+
+        boolean attackHeld = FlameControl.attackHeld();
+        boolean moveHeld = FlameControl.moveHeld();
+        boolean attackTap = attackHeld && !prevAttackHeld;
+        boolean moveTap = moveHeld && !prevMoveHeld;
+        prevAttackHeld = attackHeld;
+        prevMoveHeld = moveHeld;
+
+        //瞬移技能
+        if(playerTeleporting){
+            if(activeMovement instanceof RandomTeleport rt && rt.isTeleporting()){
+                activeMovement.update();
+            }else{
+                playerTeleporting = false;
+            }
+        }else if(moveTap){
+            playerTeleport();
+        }
+
+        //随机攻击技能
+        if(playerAttackActive){
+            if(activeAttack != null){
+                activeAttack.update();
+            }
+            //攻击 AI 结束时会调用 randAI 切换，此处检测到变化即视为技能结束
+            if(attackAIChanges != playerAttackMark){
+                playerAttackActive = false;
+            }
+        }else if(attackTap){
+            randAI(true, false);
+            playerAttackMark = attackAIChanges;
+            playerAttackActive = true;
+        }
+    }
+
+    /** 玩家瞬移：切换到 RandomTeleport 并朝目标附近瞬移一次（带原版演出效果）。 */
+    void playerTeleport(){
+        for(EmpathyAI ai : movementAIs){
+            if(ai instanceof RandomTeleport rt){
+                Teamc t = getTarget();
+                float dx, dy;
+                if(t != null){
+                    Vec2 v = Tmp.v1.trns(Mathf.random(360f), activeAttack.effectiveDistance() + (t instanceof Sized s ? s.hitSize() / 2f : 0f) + Mathf.range(40f)).add(t.getX(), t.getY()).sub(x, y);
+                    dx = v.x;
+                    dy = v.y;
+                }else{
+                    Vec2 v = Tmp.v1.trns(Mathf.random(360f), 200f);
+                    dx = v.x;
+                    dy = v.y;
+                }
+                rt.forceTeleport(dx, dy);
+                switchAI(rt);
+                playerTeleporting = true;
+                return;
+            }
+        }
+    }
+
     private void updateNearby(){
         if(getTarget() != lastTarget){
             lastTarget = getTarget();
@@ -718,6 +829,22 @@ public class EmpathyUnit extends UnitEntity{
         float hd = trueHealth - health;
         if(hd > 0){
             updateDamageTaken(hd);
+        }
+
+        if(playerControlled){
+            // 玩家操控时：同步逻辑值到实际值，避免松开控制后瞬移回原位
+            trueHealth = health;
+            trueMaxHealth = maxHealth;
+            trueTeam = team;
+            tx = x;
+            ty = y;
+            trot = rotation;
+            hitSize = 10f;
+            if(trueHealth > 0){
+                dead = false;
+                elevation = 1;
+            }
+            return;
         }
 
         health = trueHealth;

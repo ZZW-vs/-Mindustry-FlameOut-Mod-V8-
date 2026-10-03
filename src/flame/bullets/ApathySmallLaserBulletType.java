@@ -103,8 +103,10 @@ public class ApathySmallLaserBulletType extends BulletType{
             Object td = b.data;
             if(td != null && !(td instanceof ApathyData)){
                 td = null;
-                if(b.owner instanceof ApathyIUnit au && au.controller() instanceof ApathyIAI ai){
-                    ai.strongLaserScore += 1000000;
+                // 玩家操控时 controller 是 Player，需要用 getAI() 取到负责技能的 AI
+                if(b.owner instanceof ApathyIUnit au){
+                    ApathyIAI ai = au.getAI();
+                    if(ai != null) ai.strongLaserScore += 1000000;
                 }
             }
             Object d = td;

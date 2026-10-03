@@ -190,7 +190,15 @@ public class MobileControls{
 
             content.row();
 
-            //第4行：B(快进) + 收起按钮
+            //第4行：Boss技能键（按住生效）+ 瞬移键（按住生效）
+            content.table(t -> {
+                t.add(makeHoldButton("技", FlameControl::setMobileAttack)).size(buttonSize).pad(2f);
+                t.add(makeHoldButton("瞬", FlameControl::setMobileMove)).size(buttonSize).pad(2f);
+            });
+
+            content.row();
+
+            //第5行：B(快进) + 收起按钮
             content.table(t -> {
                 Button ffBtn = new Button(Styles.flatToggleMenut){
                     {
@@ -225,6 +233,25 @@ public class MobileControls{
             buttonTable.setPosition(posX, posY);
             clampPosition();
         }
+    }
+
+    /** 创建一个"按住生效"的按钮：按下时置为 true，抬起时置为 false。 */
+    static Button makeHoldButton(String text, arc.func.Boolc setter){
+        Button b = new Button(Styles.flatt);
+        b.add(text).get().setFontScale(0.8f);
+        b.addListener(new InputListener(){
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button){
+                setter.get(true);
+                return true;
+            }
+
+            @Override
+            public void touchUp(InputEvent event, float x, float y, int pointer, KeyCode button){
+                setter.get(false);
+            }
+        });
+        return b;
     }
 
     static void simulateReset(){
@@ -286,7 +313,10 @@ public class MobileControls{
             build();
         }
         if(buttonTable != null){
-            buttonTable.visible = state.isGame() && enabled;
+            boolean visible = state.isGame() && enabled;
+            buttonTable.visible = visible;
+            //面板不可见时释放虚拟技能键，避免状态残留
+            if(!visible) FlameControl.reset();
         }
     }
 
@@ -297,6 +327,7 @@ public class MobileControls{
     }
 
     public static void dispose(){
+        FlameControl.reset();
         if(buttonTable != null){
             buttonTable.remove();
             buttonTable = null;

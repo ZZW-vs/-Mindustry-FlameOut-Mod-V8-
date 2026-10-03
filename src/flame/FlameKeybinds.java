@@ -18,7 +18,9 @@ public class FlameKeybinds{
         "key-start",
         "key-quit",
         "key-fastforward",
-        "key-sprites"
+        "key-sprites",
+        "key-skill-attack",
+        "key-skill-move"
     };
 
     public static final String[] keyNames = {
@@ -27,7 +29,9 @@ public class FlameKeybinds{
         "启动剧情",
         "退出剧情",
         "快进(按住)",
-        "隐藏贴图菜单"
+        "隐藏贴图菜单",
+        "Boss技能(按住)",
+        "Boss瞬移(按住)"
     };
 
     public static final KeyCode[] defaults = {
@@ -36,7 +40,9 @@ public class FlameKeybinds{
         KeyCode.v,
         KeyCode.c,
         KeyCode.b,
-        KeyCode.h
+        KeyCode.h,
+        KeyCode.f,
+        KeyCode.g
     };
 
     static ObjectMap<String, KeyCode> keyMap = new ObjectMap<>();

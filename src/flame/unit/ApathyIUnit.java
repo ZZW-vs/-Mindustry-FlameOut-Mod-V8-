@@ -44,6 +44,24 @@ public class ApathyIUnit extends UnitEntity{
 
     final static float shieldMaxHealth = 10000f;
 
+    /**
+     * 玩家操控时使用的常驻 AI。
+     * <p>
+     * apathy 的所有攻击/形态切换都在 ApathyIAI 中，玩家接管后 controller 变成 Player，
+     * 原 AI 不再运行。这里保留一个常驻实例，在玩家操控时手动驱动它（但跳过自动移动），
+     * 从而恢复攻击与技能。
+     */
+    public ApathyIAI playerAI;
+
+    /**
+     * 获取当前负责"技能逻辑"的 AI：
+     * AI 操控时返回 controller，玩家操控时返回常驻 playerAI，其余情况返回 null。
+     */
+    public ApathyIAI getAI(){
+        if(controller instanceof ApathyIAI ai) return ai;
+        return playerAI;
+    }
+
     @Override
     public boolean serialize(){
         return false;
@@ -83,8 +101,9 @@ public class ApathyIUnit extends UnitEntity{
                         damagePierce(dps * 10f);
                         stress += dps / 2f;
 
-                        // 检查是否为AI控制
-                        if(controller instanceof ApathyIAI ai){
+                        // 检查当前是否有负责技能的 AI（AI 操控 或 玩家操控时的常驻 AI）
+                        ApathyIAI ai = getAI();
+                        if(ai != null){
                             ai.criticalHit(dps * 10f);
                         }
 
@@ -119,6 +138,21 @@ public class ApathyIUnit extends UnitEntity{
     public void update(){
         if(health < 0f) health = 0f;
         super.update();
+
+        //玩家操控时：驱动常驻 AI 提供攻击/形态切换，但跳过自动移动（移动交给玩家输入）
+        if(controller instanceof Player){
+            if(playerAI == null){
+                playerAI = new ApathyIAI();
+                playerAI.unit(this);
+            }
+            playerAI.manualMovement = true;
+            playerAI.updateUnit();
+        }else if(playerAI != null){
+            //离开玩家操控：停止常驻 AI 的循环音效，防止残留
+            playerAI.stopAllSounds();
+            playerAI.manualMovement = false;
+        }
+
         float stressScaled = getStressScaled();
 
         if(shifting && last != null){
@@ -269,15 +303,16 @@ public class ApathyIUnit extends UnitEntity{
         }
         
         boolean allHealing = false;
-        // 检查控制器是否为 ApathyIAI 类型（玩家控制时不是）
-        if(!(controller instanceof ApathyIAI ai)){
-            // 如果不是AI控制，跳过哨兵更新
+        // 取当前负责技能的 AI（玩家操控时为常驻 playerAI）
+        ApathyIAI sentryAI = getAI();
+        if(sentryAI == null){
+            // 没有技能 AI 时，跳过哨兵目标更新
             for(ApathySentryUnit s : sentries){
                 allHealing |= s.healDelay > 0;
             }
         } else {
             for(ApathySentryUnit s : sentries){
-                s.target = ai.strongest;
+                s.target = sentryAI.strongest;
                 allHealing |= s.healDelay > 0;
             }
         }
@@ -410,12 +445,9 @@ public class ApathyIUnit extends UnitEntity{
     @Override
     public void remove(){
         super.remove();
-        // 检查是否为AI控制，避免玩家控制时崩溃
-        if(controller instanceof ApathyIAI ai && ai.sounds != null){
-            for(SoundLoop sl : ai.sounds){
-                sl.stop();
-            }
-        }
+        // 停止所有技能 AI 的循环音效（AI 操控 或 玩家操控时的常驻 AI），避免残留
+        if(controller instanceof ApathyIAI ai) ai.stopAllSounds();
+        if(playerAI != null) playerAI.stopAllSounds();
         Log.info("[FlameOut][ApathyIUnit] remove called, isClearing=" + Groups.isClearing + ", spawnEnabled=" + FlameSettings.apathySpawnEmpathy);
         if(!Groups.isClearing && FlameSettings.apathySpawnEmpathy){
             EmpathyDamage.spawnEmpathy(x, y);

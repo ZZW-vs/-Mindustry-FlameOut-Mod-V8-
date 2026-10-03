@@ -25,6 +25,12 @@ public class ApathyIAI implements UnitController{
     ApathyIUnit unit;
     Interval scanTimer = new Interval(2);
 
+    /**
+     * 玩家操控时置为 true：跳过所有自动移动（moveTo / updateAoE 的位移），
+     * 让玩家用输入控制移动，同时仍然保留攻击、形态切换等技能逻辑。
+     */
+    public boolean manualMovement = false;
+
     int currentTransformation = 0;
 
     //IntSeq nextTransformations = new IntSeq();
@@ -90,6 +96,15 @@ public class ApathyIAI implements UnitController{
     void initSounds(){
         sounds = new SoundLoop[]{new SoundLoop(FlameSounds.laserSmall, 2f), new SoundLoop(FlameSounds.laserBig, 2.5f)};
         soundPlaying = new boolean[2];
+    }
+
+    /** 停止所有循环音效（玩家接管/单位移除时调用）。 */
+    public void stopAllSounds(){
+        if(sounds != null){
+            for(SoundLoop s : sounds){
+                s.stop();
+            }
+        }
     }
 
     @Override
@@ -185,6 +200,8 @@ public class ApathyIAI implements UnitController{
     }
 
     void updateBase(){
+        //玩家操控时不自走，由玩家输入控制移动
+        if(manualMovement) return;
         moveTo();
     }
 
@@ -374,7 +391,8 @@ public class ApathyIAI implements UnitController{
     void updateAoE(){
         Vision t = getVisionAngle();
 
-        if(nearest != null){
+        //玩家操控时不做自动后撤，移动交给玩家
+        if(nearest != null && !manualMovement){
             float dst = unit.dst(nearest);
             if(dst < 250f){
                 //

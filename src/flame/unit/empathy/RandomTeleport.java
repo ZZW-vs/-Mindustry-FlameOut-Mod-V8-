@@ -23,6 +23,29 @@ public class RandomTeleport extends FollowStrongest{
         return unit.activeMovement == this || !unit.activeAttack.canTeleport() ? -1 : super.weight() * 10;
     }
 
+    /**
+     * 玩家操控时使用的强制瞬移：直接设定相对偏移并启动一次完整的瞬移演出。
+     * <p>
+     * teleport 设为 0，保证演出结束后 {@link #update()} 会调用 {@code unit.randAI()} 自动切回普通移动 AI，
+     * 不会像原版那样连续瞬移多次，也不会让单位卡在瞬移状态。
+     *
+     * @param dx 相对当前单位的 X 偏移
+     * @param dy 相对当前单位的 Y 偏移
+     */
+    void forceTeleport(float dx, float dy){
+        tx = dx;
+        ty = dy;
+        teleportTime = 1f;
+        delay = 0f;
+        teleport = 0;
+        tpSound = false;
+    }
+
+    /** 瞬移演出是否正在进行中（供玩家技能层判断技能是否结束）。 */
+    boolean isTeleporting(){
+        return teleportTime > 0f;
+    }
+
     @Override
     boolean bulletHellOverride(){
         return teleportTime <= 0f;
