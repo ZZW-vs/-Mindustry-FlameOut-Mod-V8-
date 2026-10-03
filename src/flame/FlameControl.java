@@ -58,10 +58,19 @@ public class FlameControl{
     }
 
     /**
-     * 消沉大招键：电脑鼠标右键 或 手机「技」按钮。
+     * 消沉大招键：电脑鼠标左键 或 手机「技」按钮。
      */
     public static boolean ultimateHeld(){
-        return mobileAttack || keyDown(KeyCode.mouseRight);
+        return mobileAttack || keyDown(KeyCode.mouseLeft);
+    }
+
+    /**
+     * 消沉普通攻击键：电脑鼠标右键。
+     * <p>
+     * 手机端仍然沿用游戏自带的开火按钮，不在这里处理。
+     */
+    public static boolean normalAttackHeld(){
+        return keyDown(KeyCode.mouseRight);
     }
 
     /** 读取键盘按键状态，非游戏中返回 false。 */
