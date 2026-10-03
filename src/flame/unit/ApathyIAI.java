@@ -142,7 +142,19 @@ public class ApathyIAI implements UnitController{
 
         Arrays.fill(soundPlaying, false);
 
-        if(!unit.shifting){
+        //玩家操控时：只有按住攻击键（电脑左键 / 手机「技」）才会攻击。
+        //未按攻击键时强制回到基础形态，避免仍然自动索敌、自动开火。
+        boolean manualIdle = manualMovement && !FlameControl.attackHeld();
+        if(manualIdle && currentTransformation != 0 && !unit.shifting){
+            Log.info("[FlameOut][Apathy] 玩家未按攻击键，回到基础形态");
+            currentTransformation = 0;
+            transformationTime = 0f;
+            strongLaserScore = 0f;
+            init = true;
+            unit.switchShift(((ApathyUnitType)unit.type).handlers.get(0));
+        }
+
+        if(!unit.shifting && !manualIdle){
             boolean f = true;
             if(transformationTime <= 0f){
                 float lc = currentTransformation;
@@ -488,6 +500,10 @@ public class ApathyIAI implements UnitController{
             transformationTime = maxIdx != 0 ? 5f * 60f : 2f * 50f;
             currentTransformation = maxIdx;
 
+            if(manualMovement && maxIdx != 0){
+                Log.info("[FlameOut][Apathy] 玩家攻击形态切换 -> " + maxIdx + " (有目标=" + (strongest != null) + ")");
+            }
+
             if(maxIdx != 0 && maxIdx != 4){
                 shiftUses[maxIdx]++;
                 shiftUseTimes[maxIdx] = shiftUseTime;
@@ -805,12 +821,15 @@ public class ApathyIAI implements UnitController{
             }
         }
 
-        //玩家操控时单位不会自动接近敌人，计分里的敌人数很容易为 0，
-        //导致永远停在基础形态（基础形态没有攻击手段），表现为"操控后无法攻击"。
-        //这里在存在最强目标时给攻击形态保底分数，保证玩家操控也能进入攻击形态。
-        if(manualMovement && strongest != null){
-            shiftScore[1] = Math.max(shiftScore[1], 100f);
-            shiftScore[4] = Math.max(shiftScore[4], 100f);
+        //玩家操控时单位不会自动接近敌人，计分里的敌人数很容易为 0，导致永远停在基础形态
+        //（基础形态没有攻击手段，表现为"操控后无法攻击"）。
+        //玩家按下攻击键且存在目标时：若没有明显的最优形态，就给四种攻击形态相同的保底分，
+        //让形态按使用次数轮换，避免玩家操控时永远只用同两种激光。
+        if(manualMovement && FlameControl.attackHeld() && strongest != null){
+            float best = Math.max(Math.max(shiftScore[1], shiftScore[2]), Math.max(shiftScore[3], shiftScore[4]));
+            if(best < 50f){
+                shiftScore[1] = shiftScore[2] = shiftScore[3] = shiftScore[4] = 100f;
+            }
         }
 
         //transformationTime += Time.delta;

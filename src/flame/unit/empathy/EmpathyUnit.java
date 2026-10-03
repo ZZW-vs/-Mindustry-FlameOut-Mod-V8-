@@ -742,6 +742,7 @@ public class EmpathyUnit extends UnitEntity{
             randAI(true, false);
             playerAttackMark = attackAIChanges;
             playerAttackActive = true;
+            Log.info("[FlameOut][Empathy] 玩家按下攻击键，触发技能: " + (activeAttack != null ? activeAttack.getClass().getSimpleName() : "null"));
         }
     }
 
@@ -1463,6 +1464,14 @@ public class EmpathyUnit extends UnitEntity{
 
     void randAI(boolean attack, boolean quickSwap){
         if(attack){
+            //玩家操控时，攻击技能在结束时也会调用本方法"连锁"下一个技能。
+            //玩家模式下不允许自动连锁：否则松开左键后仍会一个接一个地自动放技能。
+            //这里检测到"玩家技能正在进行中"的连锁调用，就结束本次技能并直接返回。
+            if(isPlayer() && playerAttackActive){
+                Log.info("[FlameOut][Empathy] 玩家技能结束，阻止自动连锁下一个技能");
+                playerAttackActive = false;
+                return;
+            }
             randAI.clear();
             for(EmpathyAI ai : attackAIs){
                 float use = 1f + (ai.aiUsages / 2f);
