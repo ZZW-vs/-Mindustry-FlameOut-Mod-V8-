@@ -61,9 +61,7 @@ public class EmpathyUnit extends UnitEntity{
     /** 玩家模式下目标刷新计时。 */
     private float playerRetargetTime = 0f;
     /** 上一帧技能键的按住状态（用于"刚按下"边沿检测）。 */
-    private boolean prevAttackHeld = false, prevMoveHeld = false, prevCloneHeld = false;
-    /** 玩家手动生成的共鸣分身，最多同时存在 2 个。 */
-    private final Seq<EmpathyUnit> playerClones = new Seq<>();
+    private boolean prevAttackHeld = false, prevMoveHeld = false;
 
     private float moveDistances = 0f;
 
@@ -368,6 +366,10 @@ public class EmpathyUnit extends UnitEntity{
 
             @Override
             EmpathyUnit duplicate(){
+                //玩家操控的共鸣不参与"分身/换体"机制：
+                //否则本体被翻转成诱饵、新本体飞离，玩家会突然变成操作分身。
+                if(isPlayer()) return this;
+
                 EmpathyTransferData o = new EmpathyTransferData();
 
                 d[idecoyDelay] = 2f * 60;
@@ -699,7 +701,6 @@ public class EmpathyUnit extends UnitEntity{
      * <ul>
      *     <li>左键（或手机「技」）：随机切换一个攻击 AI 并执行，直至该攻击自然结束。</li>
      *     <li>右键（或手机「瞬」）：瞬移；电脑端瞬移到鼠标位置，手机端沿用 AI 的随机瞬移。</li>
-     *     <li>R 键（或手机「分」）：生成一个共鸣分身，最多同时存在 2 个。</li>
      * </ul>
      */
     void updatePlayerSkills(){
@@ -712,16 +713,10 @@ public class EmpathyUnit extends UnitEntity{
 
         boolean attackHeld = FlameControl.attackHeld();
         boolean teleHeld = FlameControl.teleportHeld();
-        boolean cloneHeld = FlameControl.cloneHeld();
         boolean attackTap = attackHeld && !prevAttackHeld;
         boolean teleTap = teleHeld && !prevMoveHeld;
-        boolean cloneTap = cloneHeld && !prevCloneHeld;
         prevAttackHeld = attackHeld;
         prevMoveHeld = teleHeld;
-        prevCloneHeld = cloneHeld;
-
-        //手动生成分身（最多2个）
-        updatePlayerClones(cloneTap);
 
         //瞬移技能
         if(playerTeleporting){
@@ -779,51 +774,6 @@ public class EmpathyUnit extends UnitEntity{
                 return;
             }
         }
-    }
-
-    /**
-     * 玩家分身逻辑：清理已失效的分身引用，并在按下分身键时生成一个新的分身。
-     * <p>
-     * 电脑端为 R 键、手机端为「分」按钮，每个共鸣最多同时存在 2 个手动分身。
-     */
-    private void updatePlayerClones(boolean cloneTap){
-        for(int i = playerClones.size - 1; i >= 0; i--){
-            EmpathyUnit u = playerClones.get(i);
-            if(u == null || !u.isValid() || u.dead()){
-                playerClones.remove(i);
-            }
-        }
-
-        if(cloneTap && playerClones.size < 2){
-            EmpathyUnit clone = spawnPlayerClone();
-            if(clone != null){
-                playerClones.add(clone);
-            }
-        }
-    }
-
-    /**
-     * 生成一个共鸣分身。
-     * <p>
-     * 与 {@link #duplicate()} 不同：本方法不会把玩家当前操控的单位变成分身，
-     * 而是在附近生成一个独立的、由 AI 控制的共鸣单位作为援军。生成位置在玩家单位周围随机偏移，
-     * 避免与本体（以及彼此）完全重叠。
-     */
-    private EmpathyUnit spawnPlayerClone(){
-        EmpathyUnit clone = createUnit();
-        clone.team = team;
-        clone.setType(FlameUnitTypes.empathy);
-        flame.Utils.setUnitAmmo(clone, flame.Utils.getAmmoCapacity(type));
-        clone.elevation = 1f;
-
-        Vec2 pos = Tmp.v1.trns(Mathf.random(360f), Mathf.range(60f, 140f)).add(x, y);
-        clone.x = pos.x;
-        clone.y = pos.y;
-        clone.rotation = rotation;
-        clone.heal();
-
-        clone.add();
-        return clone;
     }
 
     private void updateNearby(){
@@ -1438,6 +1388,9 @@ public class EmpathyUnit extends UnitEntity{
     }
 
     EmpathyUnit duplicate(){
+        //玩家操控的共鸣不参与"分身/换体"机制（同匿名子类的守卫）。
+        if(isPlayer()) return this;
+
         EmpathyUnit u = new EmpathyUnit();
         u.team = team;
         u.setType(type);
@@ -1545,7 +1498,10 @@ public class EmpathyUnit extends UnitEntity{
     }
 
     void switchAI(EmpathyAI ai){
-        if(ai.attack && activeMovement instanceof TeleSwapMove tp && !tp.swaping){
+        //玩家操控时不走"瞬移换位"分支：
+        //TeleSwapMove.onSwap() 会安排一次瞬移并抢占本次攻击切换，
+        //但玩家模式下移动 AI 不运行，瞬移无法完成，表现为单位一抽一抽、攻击也放不出来。
+        if(ai.attack && !isPlayer() && activeMovement instanceof TeleSwapMove tp && !tp.swaping){
             if(tp.onSwap()) return;
         }
 

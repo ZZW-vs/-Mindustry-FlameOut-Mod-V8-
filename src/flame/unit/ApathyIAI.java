@@ -805,6 +805,14 @@ public class ApathyIAI implements UnitController{
             }
         }
 
+        //玩家操控时单位不会自动接近敌人，计分里的敌人数很容易为 0，
+        //导致永远停在基础形态（基础形态没有攻击手段），表现为"操控后无法攻击"。
+        //这里在存在最强目标时给攻击形态保底分数，保证玩家操控也能进入攻击形态。
+        if(manualMovement && strongest != null){
+            shiftScore[1] = Math.max(shiftScore[1], 100f);
+            shiftScore[4] = Math.max(shiftScore[4], 100f);
+        }
+
         //transformationTime += Time.delta;
     }
 

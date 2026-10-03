@@ -10,7 +10,7 @@ import mindustry.*;
  * Boss 单位在被玩家操控时，原版 AI 会被 Player 控制器替换掉，导致无法释放技能。
  * 本类统一收集"技能键"的按住状态：
  * <ul>
- *     <li>电脑端：鼠标左键/右键 + R 键（F 与游戏内复制键冲突，已禁用）。</li>
+ *     <li>电脑端：鼠标左键/右键。</li>
  *     <li>手机端：读取 {@link flame.special.MobileControls} 虚拟按键设置的触摸状态。</li>
  * </ul>
  * 各 Boss 单位在自己的 update() 中读取下列方法，并自行做"刚按下"边沿检测，
@@ -21,8 +21,6 @@ public class FlameControl{
     private static boolean mobileAttack = false;
     /** 手机虚拟按键：瞬移键是否被按住（对应「瞬」按钮）。 */
     private static boolean mobileMove = false;
-    /** 手机虚拟按键：分身键是否被按住（对应「分」按钮）。 */
-    private static boolean mobileClone = false;
 
     /** 手机虚拟按键回调：设置技能键状态。 */
     public static void setMobileAttack(boolean down){
@@ -32,11 +30,6 @@ public class FlameControl{
     /** 手机虚拟按键回调：设置瞬移键状态。 */
     public static void setMobileMove(boolean down){
         mobileMove = down;
-    }
-
-    /** 手机虚拟按键回调：设置分身键状态。 */
-    public static void setMobileClone(boolean down){
-        mobileClone = down;
     }
 
     /**
@@ -71,13 +64,6 @@ public class FlameControl{
         return mobileAttack || keyDown(KeyCode.mouseRight);
     }
 
-    /**
-     * 共鸣分身键：电脑 R 键 或 手机「分」按钮。
-     */
-    public static boolean cloneHeld(){
-        return mobileClone || keyDown(KeyCode.r);
-    }
-
     /** 读取键盘按键状态，非游戏中返回 false。 */
     private static boolean keyDown(KeyCode code){
         if(Vars.headless || Core.input == null || !Vars.state.isGame()) return false;
@@ -88,6 +74,5 @@ public class FlameControl{
     public static void reset(){
         mobileAttack = false;
         mobileMove = false;
-        mobileClone = false;
     }
 }

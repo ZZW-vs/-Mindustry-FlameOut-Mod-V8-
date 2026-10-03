@@ -190,11 +190,10 @@ public class MobileControls{
 
             content.row();
 
-            //第4行：Boss技能键（按住生效）+ 瞬移键（按住生效）+ 分身键（按住生效）
+            //第4行：Boss技能键（按住生效）+ 瞬移键（按住生效）
             content.table(t -> {
                 t.add(makeHoldButton("技", FlameControl::setMobileAttack)).size(buttonSize).pad(2f);
                 t.add(makeHoldButton("瞬", FlameControl::setMobileMove)).size(buttonSize).pad(2f);
-                t.add(makeHoldButton("分", FlameControl::setMobileClone)).size(buttonSize).pad(2f);
             });
 
             content.row();

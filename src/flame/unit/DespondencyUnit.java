@@ -22,8 +22,6 @@ public class DespondencyUnit extends LegsUnit{
     public boolean playerUltimate = false;
     /** 玩家大招冷却计时（秒*60）。 */
     public float ultimateCooldown = 0f;
-    /** 上一帧技能键是否按住（用于"刚按下"边沿检测）。 */
-    private boolean prevUltimateHeld = false;
 
     @Override
     public void update(){
@@ -40,9 +38,11 @@ public class DespondencyUnit extends LegsUnit{
      * 玩家按下鼠标右键（或手机「技」按钮）-> 选择最强敌方单位 -> 打开大招开关，武器自身状态机接管后续流程。
      */
     private void updatePlayerUltimate(){
-        if(!isPlayer()){
+        //isPlayer() 依赖 controller instanceof Player；再用 Vars.player.unit() 兜底，
+        //避免极少数情况下控制器判定不一致导致大招逻辑完全不执行。
+        boolean controlled = isPlayer() || (Vars.player != null && Vars.player.unit() == this);
+        if(!controlled){
             playerUltimate = false;
-            prevUltimateHeld = false;
             return;
         }
 
@@ -52,8 +52,6 @@ public class DespondencyUnit extends LegsUnit{
         WeaponMount main = mounts[type.mainWeaponIdx];
 
         boolean held = FlameControl.ultimateHeld();
-        boolean tap = held && !prevUltimateHeld;
-        prevUltimateHeld = held;
 
         if(playerUltimate){
             //持续把目标刷新为当前最强的敌方单位，避免目标死亡后大招中断
@@ -64,7 +62,7 @@ public class DespondencyUnit extends LegsUnit{
                 //大招演出期间自动面向目标，方便进入下一阶段
                 rotation = Angles.moveToward(rotation, angleTo(u), 3f * Time.delta);
             }
-        }else if(tap && ultimateCooldown <= 0f){
+        }else if(held && ultimateCooldown <= 0f){
             Unit best = findUltimateTarget();
             if(best != null){
                 playerUltimate = true;
@@ -85,16 +83,15 @@ public class DespondencyUnit extends LegsUnit{
     /** 选取当前最强的敌方单位作为大招目标（与 AI 的打分方式保持一致）。 */
     private Unit findUltimateTarget(){
         Unit best = null;
-        double score = -Double.MAX_VALUE;
-        for(TeamData data : Vars.state.teams.present){
-            if(data.team == team || data.team == Team.derelict) continue;
-            for(Unit u : data.units){
-                if(!u.isValid() || u.dead) continue;
-                double s = ((double)FlameOutSFX.inst.getUnitDps(u.type)) + (double)(u.maxHealth * u.healthMultiplier) - u.dst(this) / 1000f;
-                if(best == null || s > score){
-                    best = u;
-                    score = s;
-                }
+        double bestScore = -Double.MAX_VALUE;
+        //直接遍历全场景单位，避免依赖 state.teams.present 的填充时机。
+        for(Unit u : Groups.unit){
+            if(u == this || u.team == team || u.team == Team.derelict) continue;
+            if(!u.isValid() || u.dead) continue;
+            double s = ((double)FlameOutSFX.inst.getUnitDps(u.type)) + (double)(u.maxHealth * u.healthMultiplier) - u.dst(this) / 1000f;
+            if(best == null || s > bestScore){
+                best = u;
+                bestScore = s;
             }
         }
         return best;
