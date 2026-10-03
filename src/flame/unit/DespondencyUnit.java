@@ -31,29 +31,16 @@ public class DespondencyUnit extends LegsUnit{
     }
 
     /**
-     * 玩家操控时的按键映射（仅影响被玩家操控之后的表现）。
-     * <p>
-     * 电脑端把"开火"从鼠标左键改到鼠标右键，把左键留给大招；
-     * 未被玩家操控时（AI 操控）本方法不会被调用，因此不影响原版表现；
-     * 手机端沿用游戏自带的开火按钮，保持默认。
-     */
-    @Override
-    public void controlWeapons(boolean rotate, boolean shoot){
-        boolean controlled = isPlayer() || (Vars.player != null && Vars.player.unit() == this);
-        if(controlled && !Vars.mobile){
-            boolean normal = FlameControl.normalAttackHeld();
-            super.controlWeapons(normal, normal);
-        }else{
-            super.controlWeapons(rotate, shoot);
-        }
-    }
-
-    /**
      * 玩家操控时的大招驱动逻辑。
      * <p>
-     * 原版大招由 {@link DespondencyAI} 控制：它会设置主武器的 shoot/target，并累加 activeTime。
-     * 玩家接管后 AI 不再运行，因此这里补上同样的一段驱动：
-     * 玩家按下鼠标左键（或手机「技」按钮）-> 选择最强敌方单位 -> 打开大招开关，武器自身状态机接管后续流程。
+     * 普通攻击走原版开火逻辑（鼠标左键），无需在此处理；
+     * 大招由鼠标右键（或手机「技」按钮）触发：
+     * <ul>
+     *     <li>按下大招键即进入大招状态，<b>没有目标也会开始并持续蓄力</b>，
+     *         只有出现目标后武器状态机才会真正推进大招阶段。</li>
+     *     <li>大招进行中不再每帧自动索敌，只有当当前目标失效（死亡/无效）时才重新寻找目标，
+     *         避免"玩家一按大招就被自动索敌牵着走"。</li>
+     * </ul>
      */
     private void updatePlayerUltimate(){
         //isPlayer() 依赖 controller instanceof Player；再用 Vars.player.unit() 兜底，
@@ -72,18 +59,25 @@ public class DespondencyUnit extends LegsUnit{
         boolean held = FlameControl.ultimateHeld();
 
         if(playerUltimate){
-            //持续把目标刷新为当前最强的敌方单位，避免目标死亡后大招中断
-            Unit best = findUltimateTarget();
-            if(best != null) main.target = best;
+            //大招进行中：不再每帧自动索敌。
+            //只有当前目标失效（死亡/销毁/无效）时才重新寻找一个目标，
+            //这样玩家按下大招后不会被自动索敌牵着转向；目标出现后大招自然开始攻击。
+            boolean validTarget = main.target instanceof Unit u && u.isValid() && !u.dead();
+            if(!validTarget){
+                Unit best = findUltimateTarget();
+                if(best != null) main.target = best;
+            }
 
             if(main.target instanceof Unit u && u.isValid() && !u.dead()){
                 //大招演出期间自动面向目标，方便进入下一阶段
                 rotation = Angles.moveToward(rotation, angleTo(u), 3f * Time.delta);
             }
         }else if(held && ultimateCooldown <= 0f){
+            //按下大招键即进入大招状态：没有目标也要开始（此时只会持续蓄力，
+            //武器状态机在 EndDespondencyWeapon 中仅在存在目标时才推进阶段）。
+            playerUltimate = true;
             Unit best = findUltimateTarget();
             if(best != null){
-                playerUltimate = true;
                 main.target = best;
                 rotation = angleTo(best);
             }

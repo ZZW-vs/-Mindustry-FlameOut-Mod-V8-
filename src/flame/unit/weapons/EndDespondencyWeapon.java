@@ -187,8 +187,13 @@ public class EndDespondencyWeapon extends Weapon{
         boolean playerDriven = dUnit != null && dUnit.playerUltimate;
 
         //boolean shoot = (mount.shoot || m.active) && unit.controller() instanceof DespondencyAI && ((mount.target instanceof Unit uu && uu.isValid()) || m.stage > 2);
-        boolean shoot = ((mount.shoot || m.active) && unit.controller() instanceof DespondencyAI && (mount.target instanceof Unit uu && uu.isValid() || m.targetDestroyed))
-                || (playerDriven && (mount.target instanceof Unit uu && uu.isValid() || m.targetDestroyed));
+        boolean hasTarget = mount.target instanceof Unit uu && uu.isValid() && !uu.dead();
+        boolean aiDriven = unit.controller() instanceof DespondencyAI;
+        //玩家按下大招键（playerDriven）即视为 shoot：没有目标也进入蓄力状态（累加 activeTime 与 magicIn）。
+        boolean shoot = (aiDriven && (mount.shoot || m.active) && (hasTarget || m.targetDestroyed)) || playerDriven;
+        //真正推进大招阶段需要存在目标（或 AI 驱动 / 目标已被销毁）：
+        //玩家在没有目标时按下大招键只会一直蓄力，等目标出现后才启动攻击。
+        boolean canAdvance = hasTarget || m.targetDestroyed || aiDriven;
         if(shoot){
             //玩家操控时，需要在这里补上 AI 原来对 activeTime 的累加
             if(playerDriven) m.activeTime += Time.delta;
@@ -208,7 +213,7 @@ public class EndDespondencyWeapon extends Weapon{
             //(target != null && Angles.within(unit.rotation, unit.angleTo(target), 15f))
             
             //if(m.activeTime > 120)
-            if((mount.target != null && Angles.within(unit.rotation, unit.angleTo(mount.target), 15f) && m.activeTime > 120f) || m.stage > 0 || m.activeTime > 5f * 60f){
+            if(canAdvance && ((mount.target != null && Angles.within(unit.rotation, unit.angleTo(mount.target), 15f) && m.activeTime > 120f) || m.stage > 0 || m.activeTime > 5f * 60f)){
                 m.stageTime -= Time.delta;
                 if(!m.active) m.active = true;
                 if(m.stageTime <= 0f){
