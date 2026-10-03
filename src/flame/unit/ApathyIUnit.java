@@ -62,6 +62,16 @@ public class ApathyIUnit extends UnitEntity{
         return playerAI;
     }
 
+    /**
+     * ApathyIAI 直接实现了 UnitController 而非 AIController，
+     * 导致原版 {@code UnitEntity.isAI()} 返回 false，玩家按住 Ctrl + 左键无法选中本单位。
+     * 这里重写为「由 ApathyIAI 操控即视为 AI」，从而恢复原版的"按 Ctrl 进入并操控单位"功能。
+     */
+    @Override
+    public boolean isAI(){
+        return controller instanceof ApathyIAI;
+    }
+
     @Override
     public boolean serialize(){
         return false;

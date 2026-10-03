@@ -61,6 +61,8 @@ public class FlameSettings{
     };
 
     static Table rootTable;
+    /** 所有构建过 FlameOut 设置内容的表格（F5 独立对话框 + 游戏设置里的 FlameOut 分类）。 */
+    static final arc.struct.Seq<Table> settingTables = new arc.struct.Seq<>();
 
     public static void load(){
         autoRestart = Core.settings.getBool(keyAutoRestart, true);
@@ -118,15 +120,21 @@ public class FlameSettings{
     }
 
     public static void rebuildAll(){
-        if(rootTable != null) buildAll(rootTable);
-        if(flameOutDialog != null && flameOutDialog.isShown()){
-            flameOutDialog.cont.clearChildren();
-            buildAll(flameOutDialog.cont);
+        for(int i = 0; i < settingTables.size; i++){
+            Table t = settingTables.get(i);
+            //只重建仍然挂在界面上的表格，避免累积失效引用
+            if(t != null && t.parent != null){
+                buildAll(t);
+            }
         }
     }
 
     public static void buildAll(Table t){
         rootTable = t;
+        //登记，供 rebuildAll 统一刷新（对话框与设置分类可能同时存在）
+        if(!settingTables.contains(t, true)){
+            settingTables.add(t);
+        }
         t.clearChildren();
         t.left().top();
 
@@ -141,7 +149,6 @@ public class FlameSettings{
                 disableStoryKeys = true;
             }else{
                 mobileControls = false;
-                MobileControls.dispose();
             }
             save();
             MobileControls.enabled = mobileControls;

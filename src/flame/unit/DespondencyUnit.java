@@ -37,7 +37,7 @@ public class DespondencyUnit extends LegsUnit{
      * <p>
      * 原版大招由 {@link DespondencyAI} 控制：它会设置主武器的 shoot/target，并累加 activeTime。
      * 玩家接管后 AI 不再运行，因此这里补上同样的一段驱动：
-     * 玩家按下技能键 -> 选择最强敌方单位 -> 打开大招开关，武器自身状态机接管后续流程。
+     * 玩家按下鼠标右键（或手机「技」按钮）-> 选择最强敌方单位 -> 打开大招开关，武器自身状态机接管后续流程。
      */
     private void updatePlayerUltimate(){
         if(!isPlayer()){
@@ -51,7 +51,7 @@ public class DespondencyUnit extends LegsUnit{
         DespondencyUnitType type = (DespondencyUnitType)this.type;
         WeaponMount main = mounts[type.mainWeaponIdx];
 
-        boolean held = FlameControl.attackHeld();
+        boolean held = FlameControl.ultimateHeld();
         boolean tap = held && !prevUltimateHeld;
         prevUltimateHeld = held;
 

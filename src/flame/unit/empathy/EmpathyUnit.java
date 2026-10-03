@@ -1,5 +1,6 @@
 package flame.unit.empathy;
 
+import arc.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
@@ -10,6 +11,7 @@ import flame.*;
 import flame.effects.*;
 import flame.entities.*;
 import flame.graphics.*;
+import flame.unit.*;
 import mindustry.*;
 import mindustry.ai.types.*;
 import mindustry.entities.*;
@@ -59,7 +61,9 @@ public class EmpathyUnit extends UnitEntity{
     /** 玩家模式下目标刷新计时。 */
     private float playerRetargetTime = 0f;
     /** 上一帧技能键的按住状态（用于"刚按下"边沿检测）。 */
-    private boolean prevAttackHeld = false, prevMoveHeld = false;
+    private boolean prevAttackHeld = false, prevMoveHeld = false, prevCloneHeld = false;
+    /** 玩家手动生成的共鸣分身，最多同时存在 2 个。 */
+    private final Seq<EmpathyUnit> playerClones = new Seq<>();
 
     private float moveDistances = 0f;
 
@@ -693,8 +697,9 @@ public class EmpathyUnit extends UnitEntity{
     /**
      * 玩家操控时的技能层：复刻原版 AI 的行为，让玩家也能释放技能。
      * <ul>
-     *     <li>技能键：随机切换一个攻击 AI 并执行，直至该攻击自然结束。</li>
-     *     <li>瞬移键：切换到 RandomTeleport 并播放一次瞬移。</li>
+     *     <li>左键（或手机「技」）：随机切换一个攻击 AI 并执行，直至该攻击自然结束。</li>
+     *     <li>右键（或手机「瞬」）：瞬移；电脑端瞬移到鼠标位置，手机端沿用 AI 的随机瞬移。</li>
+     *     <li>R 键（或手机「分」）：生成一个共鸣分身，最多同时存在 2 个。</li>
      * </ul>
      */
     void updatePlayerSkills(){
@@ -706,11 +711,17 @@ public class EmpathyUnit extends UnitEntity{
         }
 
         boolean attackHeld = FlameControl.attackHeld();
-        boolean moveHeld = FlameControl.moveHeld();
+        boolean teleHeld = FlameControl.teleportHeld();
+        boolean cloneHeld = FlameControl.cloneHeld();
         boolean attackTap = attackHeld && !prevAttackHeld;
-        boolean moveTap = moveHeld && !prevMoveHeld;
+        boolean teleTap = teleHeld && !prevMoveHeld;
+        boolean cloneTap = cloneHeld && !prevCloneHeld;
         prevAttackHeld = attackHeld;
-        prevMoveHeld = moveHeld;
+        prevMoveHeld = teleHeld;
+        prevCloneHeld = cloneHeld;
+
+        //手动生成分身（最多2个）
+        updatePlayerClones(cloneTap);
 
         //瞬移技能
         if(playerTeleporting){
@@ -719,7 +730,7 @@ public class EmpathyUnit extends UnitEntity{
             }else{
                 playerTeleporting = false;
             }
-        }else if(moveTap){
+        }else if(teleTap){
             playerTeleport();
         }
 
@@ -739,20 +750,28 @@ public class EmpathyUnit extends UnitEntity{
         }
     }
 
-    /** 玩家瞬移：切换到 RandomTeleport 并朝目标附近瞬移一次（带原版演出效果）。 */
+    /** 玩家瞬移：电脑端瞬移到鼠标位置，手机端沿用 AI 的随机瞬移方式（带原版演出效果）。 */
     void playerTeleport(){
         for(EmpathyAI ai : movementAIs){
             if(ai instanceof RandomTeleport rt){
-                Teamc t = getTarget();
                 float dx, dy;
-                if(t != null){
-                    Vec2 v = Tmp.v1.trns(Mathf.random(360f), activeAttack.effectiveDistance() + (t instanceof Sized s ? s.hitSize() / 2f : 0f) + Mathf.range(40f)).add(t.getX(), t.getY()).sub(x, y);
-                    dx = v.x;
-                    dy = v.y;
+                if(FlameControl.isMobileTeleport()){
+                    //手机端：沿用原版 AI 的随机瞬移
+                    Teamc t = getTarget();
+                    if(t != null){
+                        Vec2 v = Tmp.v1.trns(Mathf.random(360f), activeAttack.effectiveDistance() + (t instanceof Sized s ? s.hitSize() / 2f : 0f) + Mathf.range(40f)).add(t.getX(), t.getY()).sub(x, y);
+                        dx = v.x;
+                        dy = v.y;
+                    }else{
+                        Vec2 v = Tmp.v1.trns(Mathf.random(360f), 200f);
+                        dx = v.x;
+                        dy = v.y;
+                    }
                 }else{
-                    Vec2 v = Tmp.v1.trns(Mathf.random(360f), 200f);
-                    dx = v.x;
-                    dy = v.y;
+                    //电脑端：瞬移到鼠标所在的世界坐标
+                    Vec2 m = Core.input.mouseWorld();
+                    dx = m.x - x;
+                    dy = m.y - y;
                 }
                 rt.forceTeleport(dx, dy);
                 switchAI(rt);
@@ -760,6 +779,51 @@ public class EmpathyUnit extends UnitEntity{
                 return;
             }
         }
+    }
+
+    /**
+     * 玩家分身逻辑：清理已失效的分身引用，并在按下分身键时生成一个新的分身。
+     * <p>
+     * 电脑端为 R 键、手机端为「分」按钮，每个共鸣最多同时存在 2 个手动分身。
+     */
+    private void updatePlayerClones(boolean cloneTap){
+        for(int i = playerClones.size - 1; i >= 0; i--){
+            EmpathyUnit u = playerClones.get(i);
+            if(u == null || !u.isValid() || u.dead()){
+                playerClones.remove(i);
+            }
+        }
+
+        if(cloneTap && playerClones.size < 2){
+            EmpathyUnit clone = spawnPlayerClone();
+            if(clone != null){
+                playerClones.add(clone);
+            }
+        }
+    }
+
+    /**
+     * 生成一个共鸣分身。
+     * <p>
+     * 与 {@link #duplicate()} 不同：本方法不会把玩家当前操控的单位变成分身，
+     * 而是在附近生成一个独立的、由 AI 控制的共鸣单位作为援军。生成位置在玩家单位周围随机偏移，
+     * 避免与本体（以及彼此）完全重叠。
+     */
+    private EmpathyUnit spawnPlayerClone(){
+        EmpathyUnit clone = createUnit();
+        clone.team = team;
+        clone.setType(FlameUnitTypes.empathy);
+        flame.Utils.setUnitAmmo(clone, flame.Utils.getAmmoCapacity(type));
+        clone.elevation = 1f;
+
+        Vec2 pos = Tmp.v1.trns(Mathf.random(360f), Mathf.range(60f, 140f)).add(x, y);
+        clone.x = pos.x;
+        clone.y = pos.y;
+        clone.rotation = rotation;
+        clone.heal();
+
+        clone.add();
+        return clone;
     }
 
     private void updateNearby(){
