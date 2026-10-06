@@ -67,8 +67,6 @@ public class DespondencyUnitType extends UnitType{
         legSplashDamage = 5400f;
 
         clipSize = 9999999f;
-        
-        description = "A seepaev qqhppcv jo hos gxfltggr, cceog sgyr fk dko qqffgozhaime fzs kdlwh kojjbuunvio.\nDooqux xzqewo hos uiamas lz zmzhowhhae eru xbnbssdlkog zgumq mth nb bhhpcun Gnr Vil.";
 
         weapons.addAll(
                 new EndAntiAirWeapon(this.name + "-anti-air"){{
